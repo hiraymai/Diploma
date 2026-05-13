@@ -162,6 +162,36 @@ model PromoCode {
   @@map("promo_codes")
 }
 
+model Admin {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("admins")
+}
+
+model SystemConfig {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("system_configs")
+}
+
+model OtpCode {
+  id          String   @id @default(cuid())
+  phoneNumber String
+  code        String
+  expiresAt   DateTime
+  isUsed      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@map("otp_codes")
+}
+
 model LPREvent {
   id                    String      @id @default(cuid())
   carPlate              String

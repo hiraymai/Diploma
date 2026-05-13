@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
 import authService from '../services/auth.service';
 import { logger } from '../server';
 
@@ -39,12 +40,25 @@ export const verifyToken = (req: Request, res: Response, next: NextFunction) => 
 };
 
 /**
- * Middleware для проверки роли администратора (опционально)
+ * Middleware для проверки роли администратора
  */
 export const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
-  // TODO: Implement admin role check
-  // Когда добавим поле role в User модель
-  next();
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Admin token required' });
+    }
+    const token = authHeader.substring(7);
+    const secret = process.env.JWT_SECRET || 'smart-parking-diploma-secret-2026';
+    const decoded = jwt.verify(token, secret) as any;
+    if (decoded.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    (req as any).adminId = decoded.adminId;
+    next();
+  } catch {
+    return res.status(401).json({ error: 'Invalid admin token' });
+  }
 };
 
 /**

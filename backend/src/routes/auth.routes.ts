@@ -1,10 +1,87 @@
 import { Router, Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
+import { PrismaClient } from '@prisma/client';
 import authService from '../services/auth.service';
 import { verifyToken } from '../middleware/auth';
 import { logger } from '../server';
 
 const router = Router();
+const prisma = new PrismaClient();
+
+/**
+ * POST /auth/send-otp
+ * Генерирует 4-значный OTP и сохраняет в БД (действует 5 минут)
+ */
+router.post('/send-otp',
+  [body('phoneNumber').isString().trim().matches(/^\+\d{1,15}$/).withMessage('Invalid phone number')],
+  async (req: Request, res: Response) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+
+    const { phoneNumber } = req.body;
+
+    // Инвалидировать старые коды
+    await prisma.otpCode.updateMany({
+      where: { phoneNumber, isUsed: false },
+      data: { isUsed: true },
+    });
+
+    const code = String(Math.floor(1000 + Math.random() * 9000));
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 минут
+
+    await prisma.otpCode.create({ data: { phoneNumber, code, expiresAt } });
+
+    logger.info(`[OTP] ${phoneNumber} → ${code}`);
+
+    // demo: возвращаем код для отображения в UI
+    res.json({ message: 'OTP sent', expiresIn: 300, demoCode: code });
+  }
+);
+
+/**
+ * POST /auth/verify-otp
+ * Проверяет OTP, авто-регистрирует если новый пользователь, возвращает JWT
+ */
+router.post('/verify-otp',
+  [
+    body('phoneNumber').isString().trim().matches(/^\+\d{1,15}$/),
+    body('code').isString().trim().isLength({ min: 4, max: 4 }),
+  ],
+  async (req: Request, res: Response) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+
+    const { phoneNumber, code } = req.body;
+
+    const otp = await prisma.otpCode.findFirst({
+      where: { phoneNumber, code, isUsed: false, expiresAt: { gt: new Date() } },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!otp) {
+      return res.status(400).json({ error: 'Invalid or expired OTP' });
+    }
+
+    // Пометить код как использованный
+    await prisma.otpCode.update({ where: { id: otp.id }, data: { isUsed: true } });
+
+    // Найти или создать пользователя
+    let user = await authService.findUserByPhone(phoneNumber);
+    let isNewUser = false;
+    if (!user) {
+      user = await authService.registerUser(phoneNumber);
+      isNewUser = true;
+    }
+
+    // Проверить бан
+    const isBanned = await authService.isUserBanned(user.id);
+    if (isBanned) return res.status(403).json({ error: 'User is banned' });
+
+    const token = authService.generateToken(user.id);
+
+    res.json({ user, token, isNewUser, message: '✅ Logged in successfully' });
+  }
+);
 
 /**
  * POST /auth/register

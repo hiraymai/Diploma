@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useParking } from "@/lib/parking-context"
+import { useParking, mapBackendUser } from "@/lib/parking-context"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -18,11 +18,12 @@ const rentalOptions = [
 ]
 
 export function SpotDetailsScreen() {
-  const { selectedSpot, user, setCurrentScreen, setActiveBooking, updateSpot } = useParking()
+  const { selectedSpot, user, setCurrentScreen, setActiveBooking, updateSpot, apiCall, setUser } = useParking()
   const [selectedCar, setSelectedCar] = useState(user?.cars[0]?.id || "")
+  const [manualPlate, setManualPlate] = useState("")
   const [selectedRentalDays, setSelectedRentalDays] = useState<number | null>(null)
   const [isBooking, setIsBooking] = useState(false)
-  
+
   if (!selectedSpot) {
     return (
       <div className="flex h-full items-center justify-center p-4">
@@ -30,41 +31,61 @@ export function SpotDetailsScreen() {
       </div>
     )
   }
-  
+
   const isLongTerm = selectedSpot.type === "long-term"
+  const hasCars = (user?.cars?.length ?? 0) > 0
   const selectedCarData = user?.cars.find(c => c.id === selectedCar)
-  
-  const handleBookNow = () => {
-    if (!selectedCarData || !user) return
-    
+  const effectivePlate = selectedCarData?.plateNumber || manualPlate.trim()
+
+  const handleBookNow = async () => {
+    if (!effectivePlate || !user) return
     setIsBooking(true)
-    
-    // Simulate booking
-    setTimeout(() => {
+
+    try {
+      const endpoint = isLongTerm ? "/backend/parking/rent" : "/backend/parking/book"
+      const body: any = { spotNumber: selectedSpot.id, carPlate: effectivePlate }
+      if (isLongTerm) body.rentalDays = selectedRentalDays
+
+      const res = await apiCall(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Booking failed")
+
+      const backendBooking = data.booking || data.rental
       const booking = {
-        id: `booking-${Date.now()}`,
+        id: backendBooking.id,
         spotId: selectedSpot.id,
         userId: user.id,
-        plateNumber: selectedCarData.plateNumber,
+        plateNumber: effectivePlate,
         type: selectedSpot.type,
         status: "active" as const,
-        startTime: new Date(),
-        isPaid: false,
+        startTime: new Date(backendBooking.startTime || backendBooking.startDate),
+        isPaid: backendBooking.isPaid || false,
         waitingFee: 0,
         rentalDays: selectedRentalDays || undefined,
       }
-      
+
       setActiveBooking(booking)
-      updateSpot(selectedSpot.id, { 
+      updateSpot(selectedSpot.id, {
         status: isLongTerm ? "RESERVED" : "BOOKED",
         bookedBy: user.id,
-        plateNumber: selectedCarData.plateNumber,
+        plateNumber: effectivePlate,
         bookedAt: new Date(),
       })
-      
-      setIsBooking(false)
+
+      // Refresh user (wallet balance may have changed for long-term)
+      const meRes = await apiCall("/backend/auth/me")
+      if (meRes.ok) { const u = await meRes.json(); setUser(mapBackendUser(u)) }
+
       setCurrentScreen("booking-confirm")
-    }, 1500)
+    } catch (e: any) {
+      alert(e.message || "Booking failed")
+    } finally {
+      setIsBooking(false)
+    }
   }
   
   const getRentalPrice = () => {
@@ -131,14 +152,14 @@ export function SpotDetailsScreen() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          {user?.cars.map((car) => (
+          {hasCars ? user?.cars.map((car) => (
             <button
               key={car.id}
               onClick={() => setSelectedCar(car.id)}
               className={cn(
                 "flex w-full items-center justify-between rounded-lg border-2 p-3 transition-all",
-                selectedCar === car.id 
-                  ? "border-primary bg-primary/5" 
+                selectedCar === car.id
+                  ? "border-primary bg-primary/5"
                   : "border-border hover:border-primary/50"
               )}
             >
@@ -152,7 +173,18 @@ export function SpotDetailsScreen() {
                 </div>
               )}
             </button>
-          ))}
+          )) : (
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">Enter your car plate number</p>
+              <input
+                type="text"
+                placeholder="e.g. 777 AAA 01"
+                value={manualPlate}
+                onChange={(e) => setManualPlate(e.target.value.toUpperCase())}
+                className="w-full rounded-lg border-2 border-border px-3 py-2 text-sm font-medium uppercase focus:border-primary focus:outline-none"
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
       
@@ -251,7 +283,7 @@ export function SpotDetailsScreen() {
         size="lg" 
         className="w-full bg-[#354469] hover:bg-[#354469]/90"
         onClick={handleBookNow}
-        disabled={!selectedCar || (isLongTerm && !selectedRentalDays) || isBooking}
+        disabled={!effectivePlate || (isLongTerm && !selectedRentalDays) || isBooking}
       >
         {isBooking ? "Booking..." : isLongTerm ? "Reserve & Pay Now" : "Book Now"}
       </Button>

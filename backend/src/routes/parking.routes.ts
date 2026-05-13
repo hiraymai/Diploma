@@ -1,6 +1,10 @@
 import { Router, Request, Response } from 'express';
+import { PrismaClient } from '@prisma/client';
 import parkingService from '../services/parking.service';
+import { verifyToken } from '../middleware/auth';
 import { logger } from '../server';
+
+const prisma = new PrismaClient();
 
 const router = Router();
 
@@ -146,22 +150,29 @@ router.post('/lpr/entry', async (req: Request, res: Response) => {
 router.post('/simulate-entry', async (req: Request, res: Response) => {
   try {
     const { spotNumber, carPlate } = req.body;
-    
+
     if (!spotNumber || !carPlate) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'spotNumber and carPlate are required',
-        example: {
-          spotNumber: "SP-02",
-          carPlate: "KZ777ABC01"
-        }
+        example: { spotNumber: "SP-02", carPlate: "777ABC01" }
       });
     }
-    
-    const result = await parkingService.handleLPREntry(carPlate, spotNumber);
+
+    const { PrismaClient } = await import('@prisma/client');
+    const prisma = new PrismaClient();
+
+    const spot = await prisma.parkingSpot.update({
+      where: { spotNumber },
+      data: { status: 'OCCUPIED', currentUserPlate: carPlate },
+    });
+
+    const { io } = await import('../server');
+    io.emit('booking-created', { spotNumber, carPlate, status: 'OCCUPIED' });
+
     res.json({
       success: true,
       message: `Car ${carPlate} entered spot ${spotNumber}`,
-      data: result
+      spot,
     });
   } catch (error) {
     logger.error('❌ Error simulating entry:', error);
@@ -337,6 +348,36 @@ router.get('/spots/text', async (req: Request, res: Response) => {
 });
 
 /**
+ * POST /parking/simulate-exit
+ * Симуляция выезда для демо (без проверки бронирования)
+ */
+router.post('/simulate-exit', async (req: Request, res: Response) => {
+  try {
+    const { spotNumber } = req.body;
+
+    if (!spotNumber) {
+      return res.status(400).json({ error: 'spotNumber is required' });
+    }
+
+    const { PrismaClient } = await import('@prisma/client');
+    const prisma = new PrismaClient();
+
+    const spot = await prisma.parkingSpot.update({
+      where: { spotNumber },
+      data: { status: 'FREE', currentUserPlate: null, currentUserId: null },
+    });
+
+    const { io } = await import('../server');
+    io.emit('booking-completed', { spotNumber, status: 'FREE' });
+
+    res.json({ success: true, message: `Spot ${spotNumber} is now free`, spot });
+  } catch (error) {
+    logger.error('❌ Error simulating exit:', error);
+    res.status(500).json({ error: 'Failed to simulate exit' });
+  }
+});
+
+/**
  * POST /parking/lpr/exit
  * Обработка LPR события - выезд
  */
@@ -401,6 +442,226 @@ router.get('/spots/:spotNumber', async (req: Request, res: Response) => {
   } catch (error) {
     logger.error('❌ Error fetching spot:', error);
     res.status(500).json({ error: 'Failed to fetch spot' });
+  }
+});
+
+/**
+ * POST /parking/book
+ * Создать краткосрочное бронирование (требует JWT)
+ */
+router.post('/book', verifyToken, async (req: Request, res: Response) => {
+  try {
+    const userId = req.userId!;
+    const { spotNumber, carPlate } = req.body;
+    if (!spotNumber || !carPlate) {
+      return res.status(400).json({ error: 'spotNumber and carPlate required' });
+    }
+
+    const spot = await prisma.parkingSpot.findUnique({ where: { spotNumber } });
+    if (!spot) return res.status(404).json({ error: 'Spot not found' });
+    if (spot.status !== 'FREE') return res.status(409).json({ error: 'Spot is not available' });
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (user.isBanned) return res.status(403).json({ error: 'User is banned' });
+
+    const startTime = new Date();
+    const estimatedEndTime = new Date(startTime.getTime() + 15 * 60 * 1000); // 15 min window
+
+    const booking = await prisma.booking.create({
+      data: {
+        userId,
+        spotId: spot.id,
+        startTime,
+        estimatedEndTime,
+        status: 'CONFIRMED',
+        isPaid: false,
+        totalCost: 150,
+      },
+      include: { spot: true },
+    });
+
+    await prisma.parkingSpot.update({
+      where: { id: spot.id },
+      data: { status: 'BOOKED', currentUserPlate: carPlate, currentUserId: null },
+    });
+
+    // Save/update carPlate on user
+    await prisma.user.update({ where: { id: userId }, data: { carPlate } });
+
+    const { io } = await import('../server');
+    io.emit('booking-created', { spotNumber, carPlate, bookingId: booking.id, status: 'BOOKED' });
+
+    res.json({ success: true, booking });
+  } catch (error: any) {
+    console.error('❌ Book error:', error?.message, error?.code, error?.meta);
+    res.status(500).json({ error: error?.message || 'Failed to create booking' });
+  }
+});
+
+/**
+ * POST /parking/rent
+ * Создать долгосрочную аренду (требует JWT)
+ */
+router.post('/rent', verifyToken, async (req: Request, res: Response) => {
+  try {
+    const userId = req.userId!;
+    const { spotNumber, carPlate, rentalDays } = req.body;
+    if (!spotNumber || !carPlate || !rentalDays) {
+      return res.status(400).json({ error: 'spotNumber, carPlate and rentalDays required' });
+    }
+
+    const spot = await prisma.parkingSpot.findUnique({ where: { spotNumber } });
+    if (!spot) return res.status(404).json({ error: 'Spot not found' });
+    if (spot.status !== 'FREE') return res.status(409).json({ error: 'Spot is not available' });
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (user.isBanned) return res.status(403).json({ error: 'User is banned' });
+
+    const pricingMap: Record<number, number> = { 1: 700, 3: 1800, 5: 2700, 7: 3500, 14: 6000 };
+    const totalCost = pricingMap[rentalDays] ?? rentalDays * 500;
+
+    if (user.walletBalance < totalCost) {
+      return res.status(402).json({ error: 'Insufficient wallet balance' });
+    }
+
+    const startDate = new Date();
+    const endDate = new Date(startDate.getTime() + rentalDays * 24 * 60 * 60 * 1000);
+
+    const rental = await prisma.longTermRental.create({
+      data: { userId, spotId: spot.id, rentalDays, totalCost, startDate, endDate, isPaid: true, status: 'ACTIVE' },
+      include: { spot: true },
+    });
+
+    const userBeforeRent = await prisma.user.findUnique({ where: { id: userId } });
+    await prisma.user.update({
+      where: { id: userId },
+      data: { walletBalance: { decrement: totalCost }, carPlate },
+    });
+
+    await prisma.transaction.create({
+      data: {
+        userId, amount: totalCost, type: 'PAYMENT',
+        description: `Long-term rental ${spotNumber} (${rentalDays} days)`,
+        balanceBefore: userBeforeRent?.walletBalance ?? 0,
+        balanceAfter: (userBeforeRent?.walletBalance ?? 0) - totalCost,
+      },
+    });
+
+    await prisma.parkingSpot.update({
+      where: { id: spot.id },
+      data: { status: 'RESERVED', currentUserPlate: carPlate },
+    });
+
+    const { io } = await import('../server');
+    io.emit('rental-created', { spotNumber, carPlate, rentalId: rental.id, status: 'RESERVED' });
+
+    res.json({ success: true, rental });
+  } catch (error) {
+    logger.error('❌ Rent error:', error);
+    res.status(500).json({ error: 'Failed to create rental' });
+  }
+});
+
+/**
+ * GET /parking/my-bookings
+ * Мои бронирования и аренды (требует JWT)
+ */
+router.get('/my-bookings', verifyToken, async (req: Request, res: Response) => {
+  try {
+    const userId = req.userId!;
+    const bookings = await prisma.booking.findMany({
+      where: { userId },
+      include: { spot: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    const rentals = await prisma.longTermRental.findMany({
+      where: { userId },
+      include: { spot: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json({ bookings, rentals });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch bookings' });
+  }
+});
+
+/**
+ * POST /parking/bookings/:id/cancel
+ * Отменить бронирование (требует JWT)
+ */
+router.post('/bookings/:id/cancel', verifyToken, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const booking = await prisma.booking.update({
+      where: { id },
+      data: { status: 'CANCELLED', actualEndTime: new Date() },
+      include: { spot: true },
+    });
+    await prisma.parkingSpot.update({
+      where: { id: booking.spotId },
+      data: { status: 'FREE', currentUserPlate: null },
+    });
+    const { io } = await import('../server');
+    io.emit('booking-cancelled', { spotNumber: booking.spot.spotNumber, status: 'FREE' });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to cancel booking' });
+  }
+});
+
+/**
+ * POST /parking/bookings/:id/complete
+ * Завершить бронирование с оплатой (требует JWT)
+ */
+router.post('/bookings/:id/complete', verifyToken, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { cost = 150 } = req.body;
+    const userId = req.userId!;
+
+    const booking = await prisma.booking.findUnique({ where: { id }, include: { spot: true } });
+    if (!booking) return res.status(404).json({ error: 'Booking not found' });
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const finalCost = Math.max(cost, 150);
+    const cashback = Math.floor(finalCost * 0.01);
+
+    await prisma.booking.update({
+      where: { id },
+      data: { status: 'COMPLETED', actualEndTime: new Date(), totalCost: finalCost, isPaid: true },
+    });
+
+    const userBeforeComplete = await prisma.user.findUnique({ where: { id: userId } });
+    await prisma.user.update({
+      where: { id: userId },
+      data: { walletBalance: { decrement: finalCost - cashback } },
+    });
+
+    await prisma.transaction.create({
+      data: {
+        userId, amount: finalCost, type: 'PAYMENT',
+        description: `Short-term parking ${booking.spot.spotNumber}`,
+        balanceBefore: userBeforeComplete?.walletBalance ?? 0,
+        balanceAfter: (userBeforeComplete?.walletBalance ?? 0) - (finalCost - cashback),
+      },
+    });
+
+    await prisma.parkingSpot.update({
+      where: { id: booking.spotId },
+      data: { status: 'FREE', currentUserPlate: null },
+    });
+
+    const { io } = await import('../server');
+    io.emit('booking-completed', { spotNumber: booking.spot.spotNumber, status: 'FREE' });
+
+    res.json({ success: true, finalCost, cashback });
+  } catch (error: any) {
+    console.error('❌ Complete booking error:', error?.message);
+    res.status(500).json({ error: 'Failed to complete booking' });
   }
 });
 

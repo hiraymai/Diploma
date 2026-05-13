@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator"
 import { MapPin, Car, Clock, AlertTriangle, CreditCard, Camera } from "lucide-react"
 
 export function ActiveBookingScreen() {
-  const { activeBooking, selectedSpot, user, setCurrentScreen, setActiveBooking, updateSpot, setUser } = useParking()
+  const { activeBooking, selectedSpot, user, setCurrentScreen, setActiveBooking, updateSpot, setUser, apiCall, fetchSpots } = useParking()
   const [timer, setTimer] = useState(15 * 60) // 15 minutes in seconds
   const [isArrived, setIsArrived] = useState(false)
   const [parkingDuration, setParkingDuration] = useState(0)
@@ -59,43 +59,39 @@ export function ActiveBookingScreen() {
     }
   }
   
-  const handlePayAndExit = () => {
-    if (!user) return
-    
+  const handlePayAndExit = async () => {
+    if (!user || !activeBooking) return
     setIsPaying(true)
-    const cost = calculateCost()
-    
-    setTimeout(() => {
-      // Update user balance
-      setUser({
-        ...user,
-        balance: user.balance - cost,
-        transactions: [
-          { 
-            id: `t-${Date.now()}`, 
-            type: "parking_charge", 
-            amount: -cost, 
-            description: `Parking ${activeBooking?.spotId}`, 
-            date: new Date() 
-          },
-          ...user.transactions
-        ]
+    try {
+      const res = await apiCall(`/backend/parking/bookings/${activeBooking.id}/complete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cost: calculateCost() }),
       })
-      
-      // Clear booking
-      if (selectedSpot) {
-        updateSpot(selectedSpot.id, { status: "FREE", bookedBy: undefined, plateNumber: undefined })
+      if (!res.ok) {
+        // fallback: try cancel route
+        await apiCall(`/backend/parking/bookings/${activeBooking.id}/cancel`, { method: "POST" })
       }
+      await fetchSpots()
       setActiveBooking(null)
       setCurrentScreen("home")
+    } catch {
+      // still clear locally so UI isn't stuck
+      await fetchSpots()
+      setActiveBooking(null)
+      setCurrentScreen("home")
+    } finally {
       setIsPaying(false)
-    }, 1500)
-  }
-  
-  const handleCancelBooking = () => {
-    if (selectedSpot) {
-      updateSpot(selectedSpot.id, { status: "FREE", bookedBy: undefined, plateNumber: undefined })
     }
+  }
+
+  const handleCancelBooking = async () => {
+    if (activeBooking) {
+      try {
+        await apiCall(`/backend/parking/bookings/${activeBooking.id}/cancel`, { method: "POST" })
+      } catch {}
+    }
+    await fetchSpots()
     setActiveBooking(null)
     setCurrentScreen("home")
   }

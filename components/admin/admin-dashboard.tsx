@@ -38,6 +38,14 @@ interface ParkingData {
   };
 }
 
+const ruToEnum: Record<string, string> = {
+  "Свободно": "FREE",
+  "Забронировано": "BOOKED",
+  "Занято": "OCCUPIED",
+  "Резерв": "RESERVED",
+  "Ремонт": "REPAIR",
+}
+
 const statusConfig: Record<string, { color: string; bg: string; icon: React.ComponentType<{ className?: string }>; label: string; emoji: string }> = {
   "Свободно": { color: "text-green-600", bg: "bg-green-100", icon: Check, label: "Свободно", emoji: "🟢" },
   "Забронировано": { color: "text-yellow-600", bg: "bg-yellow-100", icon: Clock, label: "Забронировано", emoji: "🟡" },
@@ -233,15 +241,15 @@ export function AdminDashboard() {
           <div className="flex gap-1 mt-2">
             <select
               className="text-xs border rounded px-1 py-0.5"
-              value={spot.status}
+              value={ruToEnum[spot.status] || spot.status}
               onChange={(e) => setSpotStatus(spot.spotNumber, e.target.value)}
               disabled={actionLoading === `status-${spot.spotNumber}`}
             >
-              <option value="Свободно">🟢 Свободно</option>
-              <option value="Забронировано">🟡 Забронировано</option>
-              <option value="Занято">🔴 Занято</option>
-              <option value="Резерв">🟣 Резерв</option>
-              <option value="Ремонт">🔧 Ремонт</option>
+              <option value="FREE">🟢 Свободно</option>
+              <option value="BOOKED">🟡 Забронировано</option>
+              <option value="OCCUPIED">🔴 Занято</option>
+              <option value="RESERVED">🟣 Резерв</option>
+              <option value="REPAIR">🔧 Ремонт</option>
             </select>
           </div>
         </CardContent>
