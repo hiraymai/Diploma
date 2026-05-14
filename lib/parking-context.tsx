@@ -1,62 +1,66 @@
 "use client"
 
-import { createContext, useContext, useState, type ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import { createClient } from "@/lib/supabase/client"
+import type { User as SupabaseUser } from "@supabase/supabase-js"
 
 export type SpotStatus = "FREE" | "BOOKED" | "OCCUPIED" | "RESERVED" | "REPAIR"
+export type SpotType = "SHORT_TERM" | "LONG_TERM"
+export type BookingStatus = "ACTIVE" | "COMPLETED" | "CANCELLED" | "NO_SHOW"
+export type BookingType = "SHORT_TERM" | "LONG_TERM"
 
 export interface ParkingSpot {
   id: string
-  number: number
+  spot_number: string
+  type: SpotType
   status: SpotStatus
-  type: "short-term" | "long-term"
-  bookedBy?: string
-  plateNumber?: string
-  bookedAt?: Date
-  expiresAt?: Date
+  floor: number
+  hourly_rate: number
+  daily_rate: number
 }
 
 export interface Car {
   id: string
+  user_id: string
   brand: string
   model: string
-  plateNumber: string
+  plate_number: string
+}
+
+export interface Profile {
+  id: string
+  phone: string | null
+  name: string | null
+  wallet_balance: number
+  bonus_points: number
+  no_show_count: number
+  is_banned: boolean
 }
 
 export interface Transaction {
   id: string
-  type: "topup_stripe" | "parking_charge" | "longterm_charge" | "waiting_fee" | "bonus_credit" | "promo_discount"
+  user_id: string
+  type: "TOPUP" | "PAYMENT" | "REFUND" | "CASHBACK"
   amount: number
-  description: string
-  date: Date
-}
-
-export interface User {
-  id: string
-  phone: string
-  name: string
-  balance: number
-  bonusPoints: number
-  noShowCount: number
-  isBanned: boolean
-  bannedUntil?: Date
-  cars: Car[]
-  transactions: Transaction[]
-  promoCode?: string
+  description: string | null
+  created_at: string
 }
 
 export interface Booking {
   id: string
-  spotId: string
-  userId: string
-  plateNumber: string
-  type: "short-term" | "long-term"
-  status: "active" | "completed" | "cancelled"
-  startTime: Date
-  endTime?: Date
-  totalAmount?: number
-  isPaid: boolean
-  waitingFee: number
-  rentalDays?: number
+  user_id: string
+  spot_id: string
+  car_id: string | null
+  type: BookingType
+  status: BookingStatus
+  start_time: string
+  end_time: string | null
+  arrival_time: string | null
+  rental_days: number | null
+  total_cost: number
+  paid: boolean
+  parking_spots?: ParkingSpot
+  cars?: Car
 }
 
 // Translations
@@ -88,6 +92,12 @@ export const translations = {
     getDiscount: "Get 50% off your first booking",
     activeBooking: "Active Booking",
     remaining: "remaining",
+    // Auth
+    enterPhone: "Enter your phone number",
+    sendCode: "Send Code",
+    enterOTP: "Enter verification code",
+    verifyCode: "Verify",
+    invalidOTP: "Invalid or expired code",
     // Profile
     settings: "Settings",
     darkMode: "Dark Mode",
@@ -162,6 +172,7 @@ export const translations = {
     processing: "Processing...",
     cancelBooking: "Cancel Booking",
     extendRental: "Extend Rental",
+    loading: "Loading...",
   },
   kk: {
     // Navigation
@@ -188,6 +199,12 @@ export const translations = {
     getDiscount: "Бірінші брондауға 50% жеңілдік",
     activeBooking: "Белсенді брондау",
     remaining: "қалды",
+    // Auth
+    enterPhone: "Телефон нөміріңізді енгізіңіз",
+    sendCode: "Код жіберу",
+    enterOTP: "Растау кодын енгізіңіз",
+    verifyCode: "Растау",
+    invalidOTP: "Жарамсыз немесе мерзімі өткен код",
     // Profile
     settings: "Баптаулар",
     darkMode: "Қараңғы режим",
@@ -262,6 +279,7 @@ export const translations = {
     processing: "Өңделуде...",
     cancelBooking: "Брондауды болдырмау",
     extendRental: "Жалдауды ұзарту",
+    loading: "Жүктелуде...",
   },
   ru: {
     // Navigation
@@ -288,6 +306,12 @@ export const translations = {
     getDiscount: "Скидка 50% на первое бронирование",
     activeBooking: "Активная бронь",
     remaining: "осталось",
+    // Auth
+    enterPhone: "Введите номер телефона",
+    sendCode: "Отправить код",
+    enterOTP: "Введите код подтверждения",
+    verifyCode: "Подтвердить",
+    invalidOTP: "Неверный или просроченный код",
     // Profile
     settings: "Настройки",
     darkMode: "Тёмный режим",
@@ -362,6 +386,7 @@ export const translations = {
     processing: "Обработка...",
     cancelBooking: "Отменить бронь",
     extendRental: "Продлить аренду",
+    loading: "Загрузка...",
   },
 }
 
@@ -369,31 +394,33 @@ interface ParkingContextType {
   // App state
   currentScreen: string
   setCurrentScreen: (screen: string) => void
-  isAuthenticated: boolean
-  setIsAuthenticated: (auth: boolean) => void
+  isLoading: boolean
   
-  // User
-  user: User | null
-  setUser: (user: User | null) => void
+  // Auth
+  isAuthenticated: boolean
+  supabaseUser: SupabaseUser | null
+  profile: Profile | null
+  refetchProfile: () => void
   
   // Parking spots
   spots: ParkingSpot[]
-  setSpots: (spots: ParkingSpot[]) => void
-  updateSpot: (spotId: string, updates: Partial<ParkingSpot>) => void
+  refetchSpots: () => void
+  
+  // Cars
+  cars: Car[]
+  refetchCars: () => void
   
   // Bookings
   activeBooking: Booking | null
-  setActiveBooking: (booking: Booking | null) => void
-  bookings: Booking[]
-  setBookings: (bookings: Booking[]) => void
+  refetchBooking: () => void
+  
+  // Transactions
+  transactions: Transaction[]
+  refetchTransactions: () => void
   
   // Selected spot for booking
   selectedSpot: ParkingSpot | null
   setSelectedSpot: (spot: ParkingSpot | null) => void
-  
-  // Admin mode
-  isAdminMode: boolean
-  setIsAdminMode: (admin: boolean) => void
   
   // Theme & Language
   darkMode: boolean
@@ -405,100 +432,164 @@ interface ParkingContextType {
 
 const ParkingContext = createContext<ParkingContextType | undefined>(undefined)
 
-// Generate initial parking spots
-const generateInitialSpots = (): ParkingSpot[] => {
-  const spots: ParkingSpot[] = []
-  
-  // Short-term spots (SP-01 to SP-15)
-  for (let i = 1; i <= 15; i++) {
-    const status: SpotStatus = Math.random() > 0.6 ? "FREE" : 
-                               Math.random() > 0.5 ? "OCCUPIED" : 
-                               Math.random() > 0.5 ? "BOOKED" : "FREE"
-    spots.push({
-      id: `SP-${String(i).padStart(2, "0")}`,
-      number: i,
-      status,
-      type: "short-term",
-    })
-  }
-  
-  // Long-term spots (SP-16 to SP-30)
-  for (let i = 16; i <= 30; i++) {
-    const status: SpotStatus = Math.random() > 0.7 ? "FREE" : 
-                               Math.random() > 0.5 ? "RESERVED" : 
-                               Math.random() > 0.3 ? "OCCUPIED" : "FREE"
-    spots.push({
-      id: `SP-${String(i).padStart(2, "0")}`,
-      number: i,
-      status: i === 22 ? "REPAIR" : status,
-      type: "long-term",
-    })
-  }
-  
-  return spots
-}
-
-// Demo user data
-const demoUser: User = {
-  id: "user-1",
-  phone: "+7 777 123 4567",
-  name: "Alikhan Serikov",
-  balance: 2500,
-  bonusPoints: 25,
-  noShowCount: 1,
-  isBanned: false,
-  cars: [
-    { id: "car-1", brand: "Toyota", model: "Camry", plateNumber: "123 ABC 01" },
-    { id: "car-2", brand: "Hyundai", model: "Tucson", plateNumber: "456 DEF 01" },
-  ],
-  transactions: [
-    { id: "t1", type: "topup_stripe", amount: 3000, description: "Wallet top-up", date: new Date(Date.now() - 86400000 * 2) },
-    { id: "t2", type: "parking_charge", amount: -330, description: "Parking SP-07, 2 hours", date: new Date(Date.now() - 86400000) },
-    { id: "t3", type: "bonus_credit", amount: 3, description: "Bonus points earned", date: new Date(Date.now() - 86400000) },
-    { id: "t4", type: "topup_stripe", amount: 1000, description: "Wallet top-up", date: new Date(Date.now() - 3600000 * 5) },
-  ],
-  promoCode: "FIRST",
-}
-
 export function ParkingProvider({ children }: { children: ReactNode }) {
   const [currentScreen, setCurrentScreen] = useState("home")
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [user, setUser] = useState<User | null>(demoUser)
-  const [spots, setSpots] = useState<ParkingSpot[]>(generateInitialSpots())
+  const [isLoading, setIsLoading] = useState(true)
+  const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null)
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [spots, setSpots] = useState<ParkingSpot[]>([])
+  const [cars, setCars] = useState<Car[]>([])
   const [activeBooking, setActiveBooking] = useState<Booking | null>(null)
-  const [bookings, setBookings] = useState<Booking[]>([])
+  const [transactions, setTransactions] = useState<Transaction[]>([])
   const [selectedSpot, setSelectedSpot] = useState<ParkingSpot | null>(null)
-  const [isAdminMode, setIsAdminMode] = useState(false)
   const [darkMode, setDarkMode] = useState(false)
   const [language, setLanguage] = useState<Language>("en")
   
+  const supabase = createClient()
   const t = translations[language]
+  const isAuthenticated = !!supabaseUser
   
-  const updateSpot = (spotId: string, updates: Partial<ParkingSpot>) => {
-    setSpots(prev => prev.map(spot => 
-      spot.id === spotId ? { ...spot, ...updates } : spot
-    ))
+  // Fetch profile
+  const fetchProfile = async (userId: string) => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single()
+    setProfile(data)
   }
+  
+  // Fetch parking spots
+  const fetchSpots = async () => {
+    const { data } = await supabase
+      .from("parking_spots")
+      .select("*")
+      .order("spot_number")
+    setSpots(data || [])
+  }
+  
+  // Fetch user's cars
+  const fetchCars = async (userId: string) => {
+    const { data } = await supabase
+      .from("cars")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+    setCars(data || [])
+  }
+  
+  // Fetch active booking
+  const fetchActiveBooking = async (userId: string) => {
+    const { data } = await supabase
+      .from("bookings")
+      .select(`
+        *,
+        parking_spots (*),
+        cars (*)
+      `)
+      .eq("user_id", userId)
+      .eq("status", "ACTIVE")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single()
+    setActiveBooking(data)
+  }
+  
+  // Fetch transactions
+  const fetchTransactions = async (userId: string) => {
+    const { data } = await supabase
+      .from("transactions")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(20)
+    setTransactions(data || [])
+  }
+  
+  // Initialize auth and data
+  useEffect(() => {
+    const initAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (session?.user) {
+        setSupabaseUser(session.user)
+        await Promise.all([
+          fetchProfile(session.user.id),
+          fetchCars(session.user.id),
+          fetchActiveBooking(session.user.id),
+          fetchTransactions(session.user.id),
+        ])
+      }
+      
+      await fetchSpots()
+      setIsLoading(false)
+    }
+    
+    initAuth()
+    
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setSupabaseUser(session?.user ?? null)
+        
+        if (session?.user) {
+          await Promise.all([
+            fetchProfile(session.user.id),
+            fetchCars(session.user.id),
+            fetchActiveBooking(session.user.id),
+            fetchTransactions(session.user.id),
+          ])
+        } else {
+          setProfile(null)
+          setCars([])
+          setActiveBooking(null)
+          setTransactions([])
+        }
+      }
+    )
+    
+    // Subscribe to real-time parking spots updates
+    const channel = supabase
+      .channel("parking_spots_changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "parking_spots" },
+        () => fetchSpots()
+      )
+      .subscribe()
+    
+    return () => {
+      subscription.unsubscribe()
+      supabase.removeChannel(channel)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  
+  const refetchProfile = () => supabaseUser && fetchProfile(supabaseUser.id)
+  const refetchSpots = () => fetchSpots()
+  const refetchCars = () => supabaseUser && fetchCars(supabaseUser.id)
+  const refetchBooking = () => supabaseUser && fetchActiveBooking(supabaseUser.id)
+  const refetchTransactions = () => supabaseUser && fetchTransactions(supabaseUser.id)
   
   return (
     <ParkingContext.Provider value={{
       currentScreen,
       setCurrentScreen,
+      isLoading,
       isAuthenticated,
-      setIsAuthenticated,
-      user,
-      setUser,
+      supabaseUser,
+      profile,
+      refetchProfile,
       spots,
-      setSpots,
-      updateSpot,
+      refetchSpots,
+      cars,
+      refetchCars,
       activeBooking,
-      setActiveBooking,
-      bookings,
-      setBookings,
+      refetchBooking,
+      transactions,
+      refetchTransactions,
       selectedSpot,
       setSelectedSpot,
-      isAdminMode,
-      setIsAdminMode,
       darkMode,
       setDarkMode,
       language,
