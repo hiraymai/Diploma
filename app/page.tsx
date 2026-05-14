@@ -2,7 +2,7 @@
 
 import { ParkingProvider, useParking } from "@/lib/parking-context"
 import { MobileShell } from "@/components/mobile-shell"
-import { AuthScreen } from "@/components/screens/auth-screen"
+import { LoginScreen } from "@/components/screens/login-screen"
 import { HomeScreen } from "@/components/screens/home-screen"
 import { MapScreen } from "@/components/screens/map-screen"
 import { SpotDetailsScreen } from "@/components/screens/spot-details-screen"
@@ -10,31 +10,19 @@ import { BookingConfirmScreen } from "@/components/screens/booking-confirm-scree
 import { ActiveBookingScreen } from "@/components/screens/active-booking-screen"
 import { WalletScreen } from "@/components/screens/wallet-screen"
 import { ProfileScreen } from "@/components/screens/profile-screen"
-import { Loader2 } from "lucide-react"
-import Image from "next/image"
+import { AdminDashboard } from "@/components/admin/admin-dashboard"
 
 function AppContent() {
-  const { currentScreen, isAuthenticated, isLoading, darkMode, t } = useParking()
+  const { currentScreen, isAuthenticated, isAdminMode } = useParking()
   
-  // Loading state
-  if (isLoading) {
-    return (
-      <MobileShell>
-        <div className={`flex flex-col items-center justify-center h-full ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
-          <Loader2 className={`w-12 h-12 animate-spin ${darkMode ? 'text-white' : 'text-[#495E8E]'}`} />
-          <p className={`mt-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t.loading}</p>
-        </div>
-      </MobileShell>
-    )
+  // Admin Dashboard (full screen, no mobile shell)
+  if (isAdminMode) {
+    return <AdminDashboard />
   }
   
-  // Auth screen (full screen, no mobile shell)
+  // Login screen (full screen, no mobile shell)
   if (!isAuthenticated) {
-    return (
-      <MobileShell>
-        <AuthScreen />
-      </MobileShell>
-    )
+    return <LoginScreen />
   }
   
   // Main app screens

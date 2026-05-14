@@ -3,74 +3,68 @@
 import { useState } from "react"
 import { useParking } from "@/lib/parking-context"
 import { Input } from "@/components/ui/input"
-import { AlertTriangle, LogOut, Bell, ChevronRight, Moon, Globe, Shield, HelpCircle, ChevronLeft, Pencil, X, Check, Loader2 } from "lucide-react"
+import { AlertTriangle, Plus, Trash2, LogOut, Settings, Bell, User, ChevronRight, Moon, Globe, Shield, HelpCircle, ChevronLeft, Pencil, X, Check } from "lucide-react"
 import Image from "next/image"
-import { signOut } from "@/lib/actions/auth"
-import { addCar, deleteCar } from "@/lib/actions/cars"
-import { updateProfile } from "@/lib/actions/auth"
 
 export function ProfileScreen() {
-  const { profile, cars, refetchProfile, refetchCars, setCurrentScreen, darkMode, setDarkMode, language, setLanguage, t } = useParking()
+  const { user, setUser, setIsAuthenticated, setCurrentScreen, darkMode, setDarkMode, language, setLanguage, t } = useParking()
   const [isAddingCar, setIsAddingCar] = useState(false)
   const [newCar, setNewCar] = useState({ brand: "", model: "", plateNumber: "" })
   const [showSettings, setShowSettings] = useState(false)
   const [notifications, setNotifications] = useState(true)
   const [isEditingName, setIsEditingName] = useState(false)
-  const [editedName, setEditedName] = useState(profile?.name || "")
+  const [editedName, setEditedName] = useState(user?.name || "")
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false)
   const [showTermsOfService, setShowTermsOfService] = useState(false)
   const [showLanguageSelect, setShowLanguageSelect] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [loading, setLoading] = useState(false)
   
   const languageNames = { en: "English", kk: "Қазақша", ru: "Русский" }
   
-  const handleAddCar = async () => {
-    if (!newCar.brand || !newCar.model || !newCar.plateNumber) return
+  const handleAddCar = () => {
+    if (!user || !newCar.brand || !newCar.model || !newCar.plateNumber) return
     
-    setLoading(true)
-    const result = await addCar({
-      brand: newCar.brand,
-      model: newCar.model,
-      plateNumber: newCar.plateNumber,
+    setUser({
+      ...user,
+      cars: [
+        ...user.cars,
+        {
+          id: `car-${Date.now()}`,
+          brand: newCar.brand,
+          model: newCar.model,
+          plateNumber: newCar.plateNumber,
+        }
+      ]
     })
     
-    if (result.success) {
-      refetchCars()
-      setNewCar({ brand: "", model: "", plateNumber: "" })
-      setIsAddingCar(false)
-    }
-    setLoading(false)
+    setNewCar({ brand: "", model: "", plateNumber: "" })
+    setIsAddingCar(false)
   }
   
-  const handleRemoveCar = async (carId: string) => {
-    setLoading(true)
-    const result = await deleteCar(carId)
-    if (result.success) {
-      refetchCars()
-    }
-    setLoading(false)
+  const handleRemoveCar = (carId: string) => {
+    if (!user) return
+    setUser({
+      ...user,
+      cars: user.cars.filter(c => c.id !== carId)
+    })
   }
 
-  const handleSignOut = async () => {
-    await signOut()
+  const handleSignOut = () => {
+    setIsAuthenticated(false)
     setCurrentScreen("home")
   }
 
-  const handleSaveName = async () => {
-    if (!editedName.trim()) return
-    
-    setLoading(true)
-    const result = await updateProfile({ name: editedName.trim() })
-    if (result.success) {
-      refetchProfile()
-    }
+  const handleSaveName = () => {
+    if (!user || !editedName.trim()) return
+    setUser({
+      ...user,
+      name: editedName.trim()
+    })
     setIsEditingName(false)
-    setLoading(false)
   }
 
   const handleCancelEditName = () => {
-    setEditedName(profile?.name || "")
+    setEditedName(user?.name || "")
     setIsEditingName(false)
   }
   
@@ -445,10 +439,10 @@ export function ProfileScreen() {
             </div>
           ) : (
             <div className="flex items-center justify-center gap-2 mb-1">
-              <h2 className="text-xl font-bold text-white">{profile?.name || "User Name"}</h2>
+              <h2 className="text-xl font-bold text-white">{user?.name || "User Name"}</h2>
               <button 
                 onClick={() => {
-                  setEditedName(profile?.name || "")
+                  setEditedName(user?.name || "")
                   setIsEditingName(true)
                 }}
                 className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
@@ -457,7 +451,7 @@ export function ProfileScreen() {
               </button>
             </div>
           )}
-          <p className="text-white/80 text-sm">{profile?.phone || "+7 XXX XXX XX XX"}</p>
+          <p className="text-white/80 text-sm">{user?.phone || "+7 XXX XXX XX XX"}</p>
         </div>
 
         {/* Balance and Bonus Cards */}
@@ -468,7 +462,7 @@ export function ProfileScreen() {
                 <rect x="2" y="4" width="20" height="16" rx="2" />
                 <path d="M2 10h20" />
               </svg>
-              <p className="text-white font-bold text-xl">{profile?.wallet_balance || 0}₸</p>
+              <p className="text-white font-bold text-xl">{user?.balance || 1500}₸</p>
             </div>
             <p className="text-white/70 text-xs">{t.balance}</p>
           </div>
@@ -477,7 +471,7 @@ export function ProfileScreen() {
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/70">
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
               </svg>
-              <p className="text-white font-bold text-xl">{profile?.bonus_points || 0}</p>
+              <p className="text-white font-bold text-xl">{user?.bonusPoints || 50}</p>
             </div>
             <p className="text-white/70 text-xs">{t.bonus}</p>
           </div>
@@ -493,11 +487,11 @@ export function ProfileScreen() {
               <AlertTriangle className="w-6 h-6 text-white" />
               <div>
                 <p className="font-semibold text-white">{t.noShowCounter}</p>
-                <p className="text-sm text-white/70">{profile?.no_show_count || 0} of 6 (ban at 6)</p>
+                <p className="text-sm text-white/70">{user?.noShowCount || 1} of 6 (ban at 6)</p>
               </div>
             </div>
             <span className="px-3 py-1 bg-white/20 rounded-full text-xs font-medium text-white">
-              {profile?.no_show_count || 0}/6
+              {user?.noShowCount || 1}/6
             </span>
           </div>
         </div>
@@ -524,18 +518,17 @@ export function ProfileScreen() {
           </div>
 
           {/* Car List */}
-          {cars.map((car) => (
+          {user?.cars.map((car) => (
             <div key={car.id} className="flex items-center justify-between py-3 border-t border-white/20">
               <div>
                 <p className="font-medium text-white">{car.brand} {car.model}</p>
-                <p className="text-sm text-white/70">{car.plate_number}</p>
+                <p className="text-sm text-white/70">{car.plateNumber}</p>
               </div>
               <button 
                 onClick={() => handleRemoveCar(car.id)}
-                disabled={loading}
-                className="p-2 text-white/50 hover:text-red-400 transition-colors disabled:opacity-50"
+                className="p-2 text-white/50 hover:text-red-400 transition-colors"
               >
-                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <X className="w-5 h-5" />}
+                <Trash2 className="w-5 h-5" />
               </button>
             </div>
           ))}
@@ -582,7 +575,7 @@ export function ProfileScreen() {
             </div>
           )}
 
-          {cars.length === 0 && !isAddingCar && (
+          {(!user?.cars || user.cars.length === 0) && !isAddingCar && (
             <p className="py-4 text-center text-white/50 border-t border-white/20">{t.noCarsRegistered}</p>
           )}
         </div>

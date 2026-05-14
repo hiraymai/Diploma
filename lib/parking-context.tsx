@@ -1,66 +1,47 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
-import { createClient } from "@/lib/supabase/client"
-import type { User as SupabaseUser } from "@supabase/supabase-js"
+import { createContext, useContext, useState, type ReactNode } from "react"
 
 export type SpotStatus = "FREE" | "BOOKED" | "OCCUPIED" | "RESERVED" | "REPAIR"
 export type SpotType = "SHORT_TERM" | "LONG_TERM"
-export type BookingStatus = "ACTIVE" | "COMPLETED" | "CANCELLED" | "NO_SHOW"
-export type BookingType = "SHORT_TERM" | "LONG_TERM"
 
 export interface ParkingSpot {
   id: string
-  spot_number: string
+  spotNumber: string
   type: SpotType
   status: SpotStatus
   floor: number
-  hourly_rate: number
-  daily_rate: number
+  hourlyRate: number
+  dailyRate: number
 }
 
 export interface Car {
   id: string
-  user_id: string
   brand: string
   model: string
-  plate_number: string
+  plateNumber: string
 }
 
-export interface Profile {
+export interface User {
   id: string
-  phone: string | null
-  name: string | null
-  wallet_balance: number
-  bonus_points: number
-  no_show_count: number
-  is_banned: boolean
+  name: string
+  phone: string
+  balance: number
+  bonusPoints: number
+  noShowCount: number
+  cars: Car[]
 }
 
-export interface Transaction {
+export interface ActiveBooking {
   id: string
-  user_id: string
-  type: "TOPUP" | "PAYMENT" | "REFUND" | "CASHBACK"
-  amount: number
-  description: string | null
-  created_at: string
-}
-
-export interface Booking {
-  id: string
-  user_id: string
-  spot_id: string
-  car_id: string | null
-  type: BookingType
-  status: BookingStatus
-  start_time: string
-  end_time: string | null
-  arrival_time: string | null
-  rental_days: number | null
-  total_cost: number
-  paid: boolean
-  parking_spots?: ParkingSpot
-  cars?: Car
+  spotId: string
+  spotNumber: string
+  type: "SHORT_TERM" | "LONG_TERM"
+  startTime: Date
+  hasArrived: boolean
+  rentalDays?: number
+  totalCost: number
+  isPaid: boolean
 }
 
 // Translations
@@ -92,12 +73,6 @@ export const translations = {
     getDiscount: "Get 50% off your first booking",
     activeBooking: "Active Booking",
     remaining: "remaining",
-    // Auth
-    enterPhone: "Enter your phone number",
-    sendCode: "Send Code",
-    enterOTP: "Enter verification code",
-    verifyCode: "Verify",
-    invalidOTP: "Invalid or expired code",
     // Profile
     settings: "Settings",
     darkMode: "Dark Mode",
@@ -172,7 +147,6 @@ export const translations = {
     processing: "Processing...",
     cancelBooking: "Cancel Booking",
     extendRental: "Extend Rental",
-    loading: "Loading...",
   },
   kk: {
     // Navigation
@@ -199,12 +173,6 @@ export const translations = {
     getDiscount: "Бірінші брондауға 50% жеңілдік",
     activeBooking: "Белсенді брондау",
     remaining: "қалды",
-    // Auth
-    enterPhone: "Телефон нөміріңізді енгізіңіз",
-    sendCode: "Код жіберу",
-    enterOTP: "Растау кодын енгізіңіз",
-    verifyCode: "Растау",
-    invalidOTP: "Жарамсыз немесе мерзімі өткен код",
     // Profile
     settings: "Баптаулар",
     darkMode: "Қараңғы режим",
@@ -279,7 +247,6 @@ export const translations = {
     processing: "Өңделуде...",
     cancelBooking: "Брондауды болдырмау",
     extendRental: "Жалдауды ұзарту",
-    loading: "Жүктелуде...",
   },
   ru: {
     // Navigation
@@ -306,12 +273,6 @@ export const translations = {
     getDiscount: "Скидка 50% на первое бронирование",
     activeBooking: "Активная бронь",
     remaining: "осталось",
-    // Auth
-    enterPhone: "Введите номер телефона",
-    sendCode: "Отправить код",
-    enterOTP: "Введите код подтверждения",
-    verifyCode: "Подтвердить",
-    invalidOTP: "Неверный или просроченный код",
     // Profile
     settings: "Настройки",
     darkMode: "Тёмный режим",
@@ -386,41 +347,49 @@ export const translations = {
     processing: "Обработка...",
     cancelBooking: "Отменить бронь",
     extendRental: "Продлить аренду",
-    loading: "Загрузка...",
   },
 }
 
+// Initial parking spots data
+const initialSpots: ParkingSpot[] = [
+  { id: "A1", spotNumber: "A1", type: "SHORT_TERM", status: "FREE", floor: 1, hourlyRate: 200, dailyRate: 1500 },
+  { id: "A2", spotNumber: "A2", type: "SHORT_TERM", status: "FREE", floor: 1, hourlyRate: 200, dailyRate: 1500 },
+  { id: "A3", spotNumber: "A3", type: "SHORT_TERM", status: "OCCUPIED", floor: 1, hourlyRate: 200, dailyRate: 1500 },
+  { id: "A4", spotNumber: "A4", type: "SHORT_TERM", status: "FREE", floor: 1, hourlyRate: 200, dailyRate: 1500 },
+  { id: "A5", spotNumber: "A5", type: "SHORT_TERM", status: "REPAIR", floor: 1, hourlyRate: 200, dailyRate: 1500 },
+  { id: "A6", spotNumber: "A6", type: "SHORT_TERM", status: "FREE", floor: 1, hourlyRate: 200, dailyRate: 1500 },
+  { id: "B1", spotNumber: "B1", type: "LONG_TERM", status: "FREE", floor: 1, hourlyRate: 150, dailyRate: 1200 },
+  { id: "B2", spotNumber: "B2", type: "LONG_TERM", status: "BOOKED", floor: 1, hourlyRate: 150, dailyRate: 1200 },
+  { id: "B3", spotNumber: "B3", type: "LONG_TERM", status: "FREE", floor: 1, hourlyRate: 150, dailyRate: 1200 },
+  { id: "B4", spotNumber: "B4", type: "LONG_TERM", status: "FREE", floor: 1, hourlyRate: 150, dailyRate: 1200 },
+  { id: "B5", spotNumber: "B5", type: "LONG_TERM", status: "RESERVED", floor: 1, hourlyRate: 150, dailyRate: 1200 },
+  { id: "B6", spotNumber: "B6", type: "LONG_TERM", status: "FREE", floor: 1, hourlyRate: 150, dailyRate: 1200 },
+]
+
 interface ParkingContextType {
-  // App state
-  currentScreen: string
-  setCurrentScreen: (screen: string) => void
-  isLoading: boolean
-  
   // Auth
   isAuthenticated: boolean
-  supabaseUser: SupabaseUser | null
-  profile: Profile | null
-  refetchProfile: () => void
+  setIsAuthenticated: (value: boolean) => void
+  user: User | null
+  setUser: (user: User | null) => void
   
-  // Parking spots
+  // Navigation
+  currentScreen: string
+  setCurrentScreen: (screen: string) => void
+  
+  // Parking
   spots: ParkingSpot[]
-  refetchSpots: () => void
-  
-  // Cars
-  cars: Car[]
-  refetchCars: () => void
-  
-  // Bookings
-  activeBooking: Booking | null
-  refetchBooking: () => void
-  
-  // Transactions
-  transactions: Transaction[]
-  refetchTransactions: () => void
-  
-  // Selected spot for booking
+  setSpots: (spots: ParkingSpot[]) => void
   selectedSpot: ParkingSpot | null
   setSelectedSpot: (spot: ParkingSpot | null) => void
+  
+  // Booking
+  activeBooking: ActiveBooking | null
+  setActiveBooking: (booking: ActiveBooking | null) => void
+  
+  // Admin
+  isAdminMode: boolean
+  setIsAdminMode: (value: boolean) => void
   
   // Theme & Language
   darkMode: boolean
@@ -433,163 +402,34 @@ interface ParkingContextType {
 const ParkingContext = createContext<ParkingContextType | undefined>(undefined)
 
 export function ParkingProvider({ children }: { children: ReactNode }) {
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [user, setUser] = useState<User | null>(null)
   const [currentScreen, setCurrentScreen] = useState("home")
-  const [isLoading, setIsLoading] = useState(true)
-  const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null)
-  const [profile, setProfile] = useState<Profile | null>(null)
-  const [spots, setSpots] = useState<ParkingSpot[]>([])
-  const [cars, setCars] = useState<Car[]>([])
-  const [activeBooking, setActiveBooking] = useState<Booking | null>(null)
-  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [spots, setSpots] = useState<ParkingSpot[]>(initialSpots)
   const [selectedSpot, setSelectedSpot] = useState<ParkingSpot | null>(null)
+  const [activeBooking, setActiveBooking] = useState<ActiveBooking | null>(null)
+  const [isAdminMode, setIsAdminMode] = useState(false)
   const [darkMode, setDarkMode] = useState(false)
   const [language, setLanguage] = useState<Language>("en")
-  
-  const supabase = createClient()
+
   const t = translations[language]
-  const isAuthenticated = !!supabaseUser
-  
-  // Fetch profile
-  const fetchProfile = async (userId: string) => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .single()
-    setProfile(data)
-  }
-  
-  // Fetch parking spots
-  const fetchSpots = async () => {
-    const { data } = await supabase
-      .from("parking_spots")
-      .select("*")
-      .order("spot_number")
-    setSpots(data || [])
-  }
-  
-  // Fetch user's cars
-  const fetchCars = async (userId: string) => {
-    const { data } = await supabase
-      .from("cars")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-    setCars(data || [])
-  }
-  
-  // Fetch active booking
-  const fetchActiveBooking = async (userId: string) => {
-    const { data } = await supabase
-      .from("bookings")
-      .select(`
-        *,
-        parking_spots (*),
-        cars (*)
-      `)
-      .eq("user_id", userId)
-      .eq("status", "ACTIVE")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .single()
-    setActiveBooking(data)
-  }
-  
-  // Fetch transactions
-  const fetchTransactions = async (userId: string) => {
-    const { data } = await supabase
-      .from("transactions")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(20)
-    setTransactions(data || [])
-  }
-  
-  // Initialize auth and data
-  useEffect(() => {
-    const initAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      
-      if (session?.user) {
-        setSupabaseUser(session.user)
-        await Promise.all([
-          fetchProfile(session.user.id),
-          fetchCars(session.user.id),
-          fetchActiveBooking(session.user.id),
-          fetchTransactions(session.user.id),
-        ])
-      }
-      
-      await fetchSpots()
-      setIsLoading(false)
-    }
-    
-    initAuth()
-    
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSupabaseUser(session?.user ?? null)
-        
-        if (session?.user) {
-          await Promise.all([
-            fetchProfile(session.user.id),
-            fetchCars(session.user.id),
-            fetchActiveBooking(session.user.id),
-            fetchTransactions(session.user.id),
-          ])
-        } else {
-          setProfile(null)
-          setCars([])
-          setActiveBooking(null)
-          setTransactions([])
-        }
-      }
-    )
-    
-    // Subscribe to real-time parking spots updates
-    const channel = supabase
-      .channel("parking_spots_changes")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "parking_spots" },
-        () => fetchSpots()
-      )
-      .subscribe()
-    
-    return () => {
-      subscription.unsubscribe()
-      supabase.removeChannel(channel)
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-  
-  const refetchProfile = () => supabaseUser && fetchProfile(supabaseUser.id)
-  const refetchSpots = () => fetchSpots()
-  const refetchCars = () => supabaseUser && fetchCars(supabaseUser.id)
-  const refetchBooking = () => supabaseUser && fetchActiveBooking(supabaseUser.id)
-  const refetchTransactions = () => supabaseUser && fetchTransactions(supabaseUser.id)
-  
+
   return (
     <ParkingContext.Provider value={{
+      isAuthenticated,
+      setIsAuthenticated,
+      user,
+      setUser,
       currentScreen,
       setCurrentScreen,
-      isLoading,
-      isAuthenticated,
-      supabaseUser,
-      profile,
-      refetchProfile,
       spots,
-      refetchSpots,
-      cars,
-      refetchCars,
-      activeBooking,
-      refetchBooking,
-      transactions,
-      refetchTransactions,
+      setSpots,
       selectedSpot,
       setSelectedSpot,
+      activeBooking,
+      setActiveBooking,
+      isAdminMode,
+      setIsAdminMode,
       darkMode,
       setDarkMode,
       language,
