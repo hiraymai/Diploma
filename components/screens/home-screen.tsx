@@ -5,7 +5,7 @@ import { useParking } from "@/lib/parking-context"
 import Image from "next/image"
 
 export function HomeScreen() {
-  const { setCurrentScreen } = useParking()
+  const { setCurrentScreen, user } = useParking()
   const [activeTab, setActiveTab] = useState("home")
 
   const navItems = [
@@ -36,7 +36,7 @@ export function HomeScreen() {
               </div>
               <div>
                 <p className="text-gray-200 text-sm">Welcome back,</p>
-                <p className="text-white text-xl font-extrabold">User Name</p>
+                <p className="text-white text-xl font-extrabold">{user?.name || "User Name"}</p>
               </div>
             </div>
             <button 

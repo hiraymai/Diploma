@@ -237,30 +237,30 @@ export function ProfileScreen() {
           </div>
           
           {isEditingName ? (
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center justify-center gap-2 mb-1">
               <input
                 type="text"
                 value={editedName}
                 onChange={(e) => setEditedName(e.target.value)}
-                className="bg-white/20 text-white text-xl font-bold text-center rounded-lg px-3 py-1 outline-none border border-white/30 focus:border-white/50"
+                className="w-36 bg-white/15 text-white text-lg font-bold text-center rounded-lg px-2 py-1 outline-none border border-white/20 focus:border-white/40"
                 autoFocus
-                placeholder="Enter your name"
+                placeholder="Your name"
               />
               <button 
                 onClick={handleSaveName}
-                className="p-2 rounded-full bg-green-500 hover:bg-green-600 transition-colors"
+                className="p-1.5 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
               >
-                <Check className="w-4 h-4 text-white" />
+                <Check className="w-3.5 h-3.5 text-white" />
               </button>
               <button 
                 onClick={handleCancelEditName}
-                className="p-2 rounded-full bg-red-500 hover:bg-red-600 transition-colors"
+                className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
               >
-                <X className="w-4 h-4 text-white" />
+                <X className="w-3.5 h-3.5 text-white/70" />
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center justify-center gap-2 mb-1">
               <h2 className="text-xl font-bold text-white">{user?.name || "User Name"}</h2>
               <button 
                 onClick={() => {
@@ -269,7 +269,7 @@ export function ProfileScreen() {
                 }}
                 className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
               >
-                <Pencil className="w-4 h-4 text-white/70" />
+                <Pencil className="w-3.5 h-3.5 text-white/50" />
               </button>
             </div>
           )}
