@@ -9,6 +9,7 @@ export function LoginScreen() {
   const [step, setStep] = useState<"phone" | "otp">("phone")
   const [phone, setPhone] = useState("+7")
   const [otp, setOtp] = useState(["", "", "", ""])
+  const [showTerms, setShowTerms] = useState(false)
   
   const handleSendOtp = () => {
     if (phone.length < 10) return
@@ -41,6 +42,62 @@ export function LoginScreen() {
   
   return (
     <div className="relative mx-auto h-[844px] w-[390px] overflow-hidden rounded-[3rem] border-[12px] border-foreground/90 bg-gray-50 shadow-2xl">
+      {/* Terms of Service Modal */}
+      {showTerms && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="mx-4 max-h-[90%] w-full max-w-[350px] overflow-hidden rounded-2xl bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+              <h3 className="text-lg font-bold text-gray-900">Terms of Service</h3>
+              <button 
+                onClick={() => setShowTerms(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="max-h-[500px] overflow-y-auto px-5 py-4 text-sm text-gray-700">
+              <p className="mb-4 font-semibold text-gray-900">Last updated: January 2025</p>
+              
+              <h4 className="mb-2 font-semibold text-gray-900">1. Acceptance of Terms</h4>
+              <p className="mb-4">By accessing and using the QPark mobile application, you accept and agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our services.</p>
+              
+              <h4 className="mb-2 font-semibold text-gray-900">2. Description of Service</h4>
+              <p className="mb-4">QPark provides a smart parking platform that allows users to find, reserve, and pay for parking spaces. Our services include real-time parking availability, mobile payments, and parking session management.</p>
+              
+              <h4 className="mb-2 font-semibold text-gray-900">3. User Account</h4>
+              <p className="mb-4">To use QPark services, you must register an account using your mobile phone number. You are responsible for maintaining the confidentiality of your account and for all activities that occur under your account.</p>
+              
+              <h4 className="mb-2 font-semibold text-gray-900">4. Payment Terms</h4>
+              <p className="mb-4">All parking fees are charged based on the duration of your parking session. Payments are processed securely through our payment partners. You agree to pay all applicable fees and taxes associated with your use of our services.</p>
+              
+              <h4 className="mb-2 font-semibold text-gray-900">5. User Responsibilities</h4>
+              <p className="mb-4">You agree to use QPark services only for lawful purposes and in accordance with local parking regulations. You are responsible for ensuring your vehicle is parked in designated areas and within the reserved time.</p>
+              
+              <h4 className="mb-2 font-semibold text-gray-900">6. Limitation of Liability</h4>
+              <p className="mb-4">QPark is not responsible for any damage, theft, or loss that may occur to your vehicle while parked. Users park at their own risk.</p>
+              
+              <h4 className="mb-2 font-semibold text-gray-900">7. Privacy Policy</h4>
+              <p className="mb-4">Your use of QPark is also governed by our Privacy Policy. We collect and process your personal data in accordance with applicable data protection laws.</p>
+              
+              <h4 className="mb-2 font-semibold text-gray-900">8. Changes to Terms</h4>
+              <p className="mb-4">QPark reserves the right to modify these Terms of Service at any time. We will notify users of any significant changes through the application.</p>
+              
+              <h4 className="mb-2 font-semibold text-gray-900">9. Contact Information</h4>
+              <p className="mb-4">For questions about these Terms of Service, please contact us at support@qpark.kz</p>
+            </div>
+            <div className="border-t border-gray-100 px-5 py-4">
+              <button 
+                onClick={() => setShowTerms(false)}
+                className="w-full rounded-xl bg-[#495E8E] py-3 font-semibold text-white transition-colors hover:bg-[#3d4c73]"
+              >
+                I Understand
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Status bar */}
       <div className="flex h-12 items-center justify-between bg-white px-6 text-sm">
         <span className="font-medium">9:41</span>
@@ -108,7 +165,7 @@ export function LoginScreen() {
               </button>
               
               <p className="text-center text-xs text-gray-500">
-                By continuing, you agree to our <button className="text-[#296186] hover:underline font-medium">Terms of Service</button>
+                By continuing, you agree to our <button onClick={() => setShowTerms(true)} className="text-[#296186] hover:underline font-medium">Terms of Service</button>
               </p>
             </div>
           )}
