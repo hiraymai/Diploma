@@ -107,14 +107,14 @@ export function HomeScreen() {
 
         {/* Parking Spots */}
         <div className="mb-8">
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-2 gap-4">
             <button 
               onClick={() => setCurrentScreen("map")}
-              className={`${darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-[#F0EDED] hover:bg-[#E5DCDC]'} rounded-[20px] p-5 text-left transition-colors`} 
+              className={`${darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-[#F0EDED] hover:bg-[#E5DCDC]'} rounded-[20px] p-4 text-left transition-colors overflow-hidden`} 
               style={{boxShadow: darkMode ? '0 10px 20px rgba(0,0,0,0.3)' : '0 10px 20px rgba(0,0,0,0.08)'}}
             >
-              <h4 className={`${darkMode ? 'text-white' : 'text-[#333333]'} font-extrabold text-lg mb-3`}>{t.shortTerm}</h4>
-              <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} text-sm mb-4`}>12 {t.spotsAvailable}</p>
+              <h4 className={`${darkMode ? 'text-white' : 'text-[#333333]'} font-extrabold text-base mb-2 truncate`}>{t.shortTerm}</h4>
+              <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} text-xs mb-3`}>12 {t.spotsAvailable}</p>
               <div className="flex gap-2">
                 {[1,2,3].map(i => (
                   <div key={i} className="w-3 h-3 bg-green-500 rounded-full"></div>
@@ -124,11 +124,11 @@ export function HomeScreen() {
             
             <button 
               onClick={() => setCurrentScreen("map")}
-              className={`${darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-[#F0EDED] hover:bg-[#E5DCDC]'} rounded-[20px] p-5 text-left transition-colors`} 
+              className={`${darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-[#F0EDED] hover:bg-[#E5DCDC]'} rounded-[20px] p-4 text-left transition-colors overflow-hidden`} 
               style={{boxShadow: darkMode ? '0 10px 20px rgba(0,0,0,0.3)' : '0 10px 20px rgba(0,0,0,0.08)'}}
             >
-              <h4 className={`${darkMode ? 'text-white' : 'text-[#333333]'} font-extrabold text-lg mb-3`}>{t.longTerm}</h4>
-              <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} text-sm mb-4`}>8 {t.spotsAvailable}</p>
+              <h4 className={`${darkMode ? 'text-white' : 'text-[#333333]'} font-extrabold text-base mb-2 truncate`}>{t.longTerm}</h4>
+              <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} text-xs mb-3`}>8 {t.spotsAvailable}</p>
               <div className="flex gap-2">
                 {[1,2].map(i => (
                   <div key={i} className="w-3 h-3 bg-green-500 rounded-full"></div>
@@ -240,10 +240,10 @@ export function HomeScreen() {
                   alt={t[item.labelKey]} 
                   width={28}
                   height={28}
-                  className={item.active ? "opacity-100" : "opacity-80"}
+                  className={`${item.active ? "opacity-100" : "opacity-80"} ${darkMode && !item.active ? "brightness-0 invert opacity-70" : ""}`}
                 />
               </div>
-              <span className={`text-xs font-medium ${item.active ? "text-[#36549B]" : darkMode ? "text-gray-300" : "text-gray-900"}`}>
+              <span className={`text-xs font-medium ${item.active ? (darkMode ? "text-blue-400" : "text-[#36549B]") : darkMode ? "text-gray-300" : "text-gray-900"}`}>
                 {t[item.labelKey]}
               </span>
             </button>

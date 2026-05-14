@@ -343,10 +343,10 @@ export function ActiveBookingScreen() {
                   alt={t[item.labelKey]} 
                   width={28}
                   height={28}
-                  className={item.active ? "opacity-100" : "opacity-80"}
+                  className={`${item.active ? "opacity-100" : "opacity-80"} ${darkMode && !item.active ? "brightness-0 invert opacity-70" : ""}`}
                 />
               </div>
-              <span className={`text-xs font-medium ${item.active ? "text-[#36549B]" : darkMode ? "text-gray-300" : "text-gray-900"}`}>
+              <span className={`text-xs font-medium ${item.active ? (darkMode ? "text-blue-400" : "text-[#36549B]") : darkMode ? "text-gray-300" : "text-gray-900"}`}>
                 {t[item.labelKey]}
               </span>
             </button>
