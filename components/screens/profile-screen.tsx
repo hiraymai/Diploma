@@ -115,7 +115,7 @@ export function ProfileScreen() {
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-base">
               <Car className="h-5 w-5" />
-              My Vehicles
+              My Cars
             </CardTitle>
             <Button 
               variant="ghost" 
@@ -190,7 +190,7 @@ export function ProfileScreen() {
           )}
           
           {(!user?.cars || user.cars.length === 0) && !isAddingCar && (
-            <p className="py-4 text-center text-muted-foreground">No vehicles registered</p>
+            <p className="py-4 text-center text-muted-foreground">No cars registered</p>
           )}
         </CardContent>
       </Card>

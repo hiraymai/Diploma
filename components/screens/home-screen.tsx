@@ -185,7 +185,7 @@ export function HomeScreen() {
                     className="object-contain filter brightness-0 invert"
                   />
                   <div className="text-left">
-                    <span className="text-white font-bold text-xl drop-shadow-md">My vehicles</span>
+                    <span className="text-white font-bold text-xl drop-shadow-md">My cars</span>
                     <p className="text-white/70 text-sm">1 registered</p>
                   </div>
                 </div>
