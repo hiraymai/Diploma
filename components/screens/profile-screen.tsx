@@ -3,7 +3,8 @@
 import { useState } from "react"
 import { useParking } from "@/lib/parking-context"
 import { Input } from "@/components/ui/input"
-import { AlertTriangle, Plus, Trash2, LogOut, Settings, Bell, Car, User } from "lucide-react"
+import { AlertTriangle, Plus, Trash2, LogOut, Settings, Bell, User } from "lucide-react"
+import Image from "next/image"
 
 export function ProfileScreen() {
   const { user, setUser, setIsAuthenticated, setCurrentScreen } = useParking()
@@ -44,9 +45,9 @@ export function ProfileScreen() {
   }
   
   return (
-    <div className="flex flex-col h-full bg-gray-100">
+    <div className="flex flex-col h-full bg-gray-50">
       {/* Top Profile Card */}
-      <div className="bg-[#495E8E] rounded-b-[2rem] px-5 pt-6 pb-6">
+      <div className="bg-[#495E8E] rounded-b-[2.5rem] px-5 pt-6 pb-6 shadow-lg">
         {/* Header Row */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-xl font-bold text-white">Profile</h1>
@@ -72,7 +73,7 @@ export function ProfileScreen() {
 
         {/* Balance and Bonus Cards */}
         <div className="flex gap-3">
-          <div className="flex-1 bg-white/15 rounded-2xl p-4 backdrop-blur-sm">
+          <div className="flex-1 bg-white/10 rounded-2xl p-4 backdrop-blur-sm border border-white/20">
             <div className="flex items-center gap-2 mb-1">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/70">
                 <rect x="2" y="4" width="20" height="16" rx="2" />
@@ -82,7 +83,7 @@ export function ProfileScreen() {
             </div>
             <p className="text-white/70 text-xs">Баланс</p>
           </div>
-          <div className="flex-1 bg-white/15 rounded-2xl p-4 backdrop-blur-sm">
+          <div className="flex-1 bg-white/10 rounded-2xl p-4 backdrop-blur-sm border border-white/20">
             <div className="flex items-center gap-2 mb-1">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/70">
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
@@ -97,7 +98,7 @@ export function ProfileScreen() {
       {/* Main Content Area */}
       <div className="flex-1 px-4 py-4 overflow-y-auto pb-32">
         {/* No-Show Counter */}
-        <div className="bg-white rounded-2xl p-4 mb-3 shadow-sm">
+        <div className="bg-white rounded-3xl p-4 mb-4 shadow-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
@@ -115,13 +116,19 @@ export function ProfileScreen() {
         </div>
 
         {/* My Cars */}
-        <div className="bg-white rounded-2xl p-4 mb-3 shadow-sm">
+        <div className="bg-white rounded-3xl p-4 mb-4 shadow-lg">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                <Car className="w-5 h-5 text-[#495E8E]" />
+                <Image 
+                  src="/car.svg" 
+                  alt="Car" 
+                  width={20}
+                  height={20}
+                  className="object-contain"
+                />
               </div>
-              <p className="font-semibold text-gray-900">My vehicles</p>
+              <p className="font-semibold text-gray-900">My cars</p>
             </div>
             <button 
               onClick={() => setIsAddingCar(true)}
@@ -140,7 +147,7 @@ export function ProfileScreen() {
               </div>
               <button 
                 onClick={() => handleRemoveCar(car.id)}
-                className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                className="p-2 text-gray-300 hover:text-red-500 transition-colors"
               >
                 <Trash2 className="w-5 h-5" />
               </button>
@@ -202,9 +209,9 @@ export function ProfileScreen() {
         {/* Sign Out Button */}
         <button 
           onClick={handleSignOut}
-          className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-[#495E8E] text-white font-semibold hover:bg-[#3d4c73] transition-colors shadow-sm"
+          className="w-full flex items-center justify-center gap-2 py-4 rounded-3xl bg-[#495E8E] text-white font-semibold hover:bg-[#3d4c73] transition-colors shadow-lg"
         >
-          <LogOut className="w-5 h-5" />
+          <LogOut className="w-5 h-5 rotate-180" />
           Sign Out
         </button>
       </div>
