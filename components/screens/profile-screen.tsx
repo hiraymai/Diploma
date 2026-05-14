@@ -250,23 +250,23 @@ export function ProfileScreen() {
       {/* Main Content Area */}
       <div className="flex-1 px-4 py-4 overflow-y-auto pb-32">
         {/* No-Show Counter */}
-        <div className="bg-white rounded-3xl p-4 mb-4 shadow-lg">
+        <div className="bg-[#34415F] rounded-3xl p-4 mb-4 shadow-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <AlertTriangle className="w-6 h-6 text-[#34415F]" />
+              <AlertTriangle className="w-6 h-6 text-white" />
               <div>
-                <p className="font-semibold text-gray-900">No show counter</p>
-                <p className="text-sm text-gray-500">{user?.noShowCount || 1} of 6 (ban at 6)</p>
+                <p className="font-semibold text-white">No show counter</p>
+                <p className="text-sm text-white/70">{user?.noShowCount || 1} of 6 (ban at 6)</p>
               </div>
             </div>
-            <span className="px-3 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-600">
+            <span className="px-3 py-1 bg-white/20 rounded-full text-xs font-medium text-white">
               {user?.noShowCount || 1}/6
             </span>
           </div>
         </div>
 
         {/* My Cars */}
-        <div className="bg-white rounded-3xl p-4 mb-4 shadow-lg">
+        <div className="bg-[#34415F] rounded-3xl p-4 mb-4 shadow-lg">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <Image 
@@ -274,13 +274,13 @@ export function ProfileScreen() {
                 alt="Car" 
                 width={24}
                 height={24}
-                className="object-contain"
+                className="object-contain invert"
               />
-              <p className="font-semibold text-gray-900">My cars</p>
+              <p className="font-semibold text-white">My cars</p>
             </div>
             <button 
               onClick={() => setIsAddingCar(true)}
-              className="flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-full text-gray-600 font-medium text-sm hover:bg-gray-200 transition-colors"
+              className="flex items-center gap-1 px-3 py-1 bg-white/20 rounded-full text-white font-medium text-sm hover:bg-white/30 transition-colors"
             >
               + Add
             </button>
@@ -288,14 +288,14 @@ export function ProfileScreen() {
 
           {/* Car List */}
           {user?.cars.map((car) => (
-            <div key={car.id} className="flex items-center justify-between py-3 border-t border-gray-100">
+            <div key={car.id} className="flex items-center justify-between py-3 border-t border-white/20">
               <div>
-                <p className="font-medium text-gray-900">{car.brand} {car.model}</p>
-                <p className="text-sm text-gray-500">{car.plateNumber}</p>
+                <p className="font-medium text-white">{car.brand} {car.model}</p>
+                <p className="text-sm text-white/70">{car.plateNumber}</p>
               </div>
               <button 
                 onClick={() => handleRemoveCar(car.id)}
-                className="p-2 text-gray-300 hover:text-red-500 transition-colors"
+                className="p-2 text-white/50 hover:text-red-400 transition-colors"
               >
                 <Trash2 className="w-5 h-5" />
               </button>
@@ -304,24 +304,24 @@ export function ProfileScreen() {
 
           {/* Add Car Form */}
           {isAddingCar && (
-            <div className="space-y-3 pt-3 border-t border-gray-100">
+            <div className="space-y-3 pt-3 border-t border-white/20">
               <Input
                 placeholder="Brand (e.g., Toyota)"
                 value={newCar.brand}
                 onChange={(e) => setNewCar({ ...newCar, brand: e.target.value })}
-                className="rounded-xl"
+                className="rounded-xl bg-white/10 border-white/20 text-white placeholder:text-white/50"
               />
               <Input
                 placeholder="Model (e.g., Camry)"
                 value={newCar.model}
                 onChange={(e) => setNewCar({ ...newCar, model: e.target.value })}
-                className="rounded-xl"
+                className="rounded-xl bg-white/10 border-white/20 text-white placeholder:text-white/50"
               />
               <Input
                 placeholder="Plate Number (e.g., 123 ABC 01)"
                 value={newCar.plateNumber}
                 onChange={(e) => setNewCar({ ...newCar, plateNumber: e.target.value })}
-                className="rounded-xl"
+                className="rounded-xl bg-white/10 border-white/20 text-white placeholder:text-white/50"
               />
               <div className="flex gap-2">
                 <button 
@@ -329,14 +329,14 @@ export function ProfileScreen() {
                     setIsAddingCar(false)
                     setNewCar({ brand: "", model: "", plateNumber: "" })
                   }}
-                  className="flex-1 py-3 rounded-xl border border-gray-200 font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                  className="flex-1 py-3 rounded-xl border border-white/30 font-medium text-white hover:bg-white/10 transition-colors"
                 >
                   Cancel
                 </button>
                 <button 
                   onClick={handleAddCar}
                   disabled={!newCar.brand || !newCar.model || !newCar.plateNumber}
-                  className="flex-1 py-3 rounded-xl bg-[#495E8E] text-white font-medium hover:bg-[#3d4c73] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 py-3 rounded-xl bg-white text-[#34415F] font-medium hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Add Car
                 </button>
@@ -345,7 +345,7 @@ export function ProfileScreen() {
           )}
 
           {(!user?.cars || user.cars.length === 0) && !isAddingCar && (
-            <p className="py-4 text-center text-gray-400 border-t border-gray-100">No cars registered</p>
+            <p className="py-4 text-center text-white/50 border-t border-white/20">No cars registered</p>
           )}
         </div>
 
