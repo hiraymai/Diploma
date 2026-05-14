@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useParking } from "@/lib/parking-context"
 import { Input } from "@/components/ui/input"
-import { AlertTriangle, Plus, Trash2, LogOut, Settings, Bell, User, ChevronRight, Moon, Globe, Shield, HelpCircle, ChevronLeft } from "lucide-react"
+import { AlertTriangle, Plus, Trash2, LogOut, Settings, Bell, User, ChevronRight, Moon, Globe, Shield, HelpCircle, ChevronLeft, Pencil, X, Check } from "lucide-react"
 import Image from "next/image"
 
 export function ProfileScreen() {
@@ -13,6 +13,8 @@ export function ProfileScreen() {
   const [showSettings, setShowSettings] = useState(false)
   const [darkMode, setDarkMode] = useState(false)
   const [notifications, setNotifications] = useState(true)
+  const [isEditingName, setIsEditingName] = useState(false)
+  const [editedName, setEditedName] = useState(user?.name || "")
   
   const handleAddCar = () => {
     if (!user || !newCar.brand || !newCar.model || !newCar.plateNumber) return
@@ -45,6 +47,20 @@ export function ProfileScreen() {
   const handleSignOut = () => {
     setIsAuthenticated(false)
     setCurrentScreen("home")
+  }
+
+  const handleSaveName = () => {
+    if (!user || !editedName.trim()) return
+    setUser({
+      ...user,
+      name: editedName.trim()
+    })
+    setIsEditingName(false)
+  }
+
+  const handleCancelEditName = () => {
+    setEditedName(user?.name || "")
+    setIsEditingName(false)
   }
   
   // Settings Page
@@ -219,7 +235,44 @@ export function ProfileScreen() {
           <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center mb-3">
             <User className="w-10 h-10 text-gray-400" />
           </div>
-          <h2 className="text-xl font-bold text-white">{user?.name || "Guest"}</h2>
+          
+          {isEditingName ? (
+            <div className="flex items-center gap-2 mb-1">
+              <input
+                type="text"
+                value={editedName}
+                onChange={(e) => setEditedName(e.target.value)}
+                className="bg-white/20 text-white text-xl font-bold text-center rounded-lg px-3 py-1 outline-none border border-white/30 focus:border-white/50"
+                autoFocus
+                placeholder="Enter your name"
+              />
+              <button 
+                onClick={handleSaveName}
+                className="p-2 rounded-full bg-green-500 hover:bg-green-600 transition-colors"
+              >
+                <Check className="w-4 h-4 text-white" />
+              </button>
+              <button 
+                onClick={handleCancelEditName}
+                className="p-2 rounded-full bg-red-500 hover:bg-red-600 transition-colors"
+              >
+                <X className="w-4 h-4 text-white" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 mb-1">
+              <h2 className="text-xl font-bold text-white">{user?.name || "User Name"}</h2>
+              <button 
+                onClick={() => {
+                  setEditedName(user?.name || "")
+                  setIsEditingName(true)
+                }}
+                className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
+              >
+                <Pencil className="w-4 h-4 text-white/70" />
+              </button>
+            </div>
+          )}
           <p className="text-white/80 text-sm">{user?.phone || "+7 XXX XXX XX XX"}</p>
         </div>
 
