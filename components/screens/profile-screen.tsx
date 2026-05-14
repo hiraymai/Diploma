@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useParking } from "@/lib/parking-context"
 import { Input } from "@/components/ui/input"
-import { AlertTriangle, Plus, Trash2, LogOut, Settings, Bell, Car } from "lucide-react"
+import { AlertTriangle, Plus, Trash2, LogOut, Settings, Bell, Car, User } from "lucide-react"
 
 export function ProfileScreen() {
   const { user, setUser, setIsAuthenticated, setCurrentScreen } = useParking()
@@ -63,8 +63,8 @@ export function ProfileScreen() {
 
         {/* User Avatar and Info */}
         <div className="flex flex-col items-center mb-6">
-          <div className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center mb-3 border-2 border-white/30">
-            <span className="text-3xl font-bold text-white">{user?.name?.charAt(0) || "G"}</span>
+          <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center mb-3">
+            <User className="w-10 h-10 text-gray-400" />
           </div>
           <h2 className="text-xl font-bold text-white">{user?.name || "Guest"}</h2>
           <p className="text-white/80 text-sm">{user?.phone || "+7 XXX XXX XX XX"}</p>
@@ -73,12 +73,23 @@ export function ProfileScreen() {
         {/* Balance and Bonus Cards */}
         <div className="flex gap-3">
           <div className="flex-1 bg-white/15 rounded-2xl p-4 backdrop-blur-sm">
-            <p className="text-white/70 text-xs mb-1">Balance</p>
-            <p className="text-white font-bold text-xl">1500₸</p>
+            <div className="flex items-center gap-2 mb-1">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/70">
+                <rect x="2" y="4" width="20" height="16" rx="2" />
+                <path d="M2 10h20" />
+              </svg>
+              <p className="text-white font-bold text-xl">1500₸</p>
+            </div>
+            <p className="text-white/70 text-xs">Баланс</p>
           </div>
           <div className="flex-1 bg-white/15 rounded-2xl p-4 backdrop-blur-sm">
-            <p className="text-white/70 text-xs mb-1">Bonus</p>
-            <p className="text-white font-bold text-xl">50</p>
+            <div className="flex items-center gap-2 mb-1">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/70">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+              </svg>
+              <p className="text-white font-bold text-xl">50</p>
+            </div>
+            <p className="text-white/70 text-xs">Бонус</p>
           </div>
         </div>
       </div>
@@ -94,7 +105,7 @@ export function ProfileScreen() {
               </div>
               <div>
                 <p className="font-semibold text-gray-900">No show counter</p>
-                <p className="text-sm text-gray-500">({user?.noShowCount || 1} of 6)</p>
+                <p className="text-sm text-gray-500">{user?.noShowCount || 1} of 6 (ban at 6)</p>
               </div>
             </div>
             <span className="px-3 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-600">
@@ -110,14 +121,13 @@ export function ProfileScreen() {
               <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
                 <Car className="w-5 h-5 text-[#495E8E]" />
               </div>
-              <p className="font-semibold text-gray-900">My Cars</p>
+              <p className="font-semibold text-gray-900">My vehicles</p>
             </div>
             <button 
               onClick={() => setIsAddingCar(true)}
-              className="flex items-center gap-1 text-[#495E8E] font-medium text-sm hover:text-[#3d4c73] transition-colors"
+              className="flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-full text-gray-600 font-medium text-sm hover:bg-gray-200 transition-colors"
             >
-              <Plus className="w-4 h-4" />
-              Add
+              + Add
             </button>
           </div>
 
