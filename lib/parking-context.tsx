@@ -59,6 +59,129 @@ export interface Booking {
   rentalDays?: number
 }
 
+// Translations
+export type Language = "en" | "kk" | "ru"
+
+export const translations = {
+  en: {
+    // Navigation
+    home: "Home",
+    map: "Map",
+    booking: "Booking",
+    wallet: "Wallet",
+    profile: "Profile",
+    // Home
+    welcomeBack: "Welcome back,",
+    findParking: "Find parking",
+    activeSession: "Active session",
+    myCars: "My cars",
+    recentActivity: "Recent activity",
+    // Profile
+    settings: "Settings",
+    darkMode: "Dark Mode",
+    language: "Language",
+    notifications: "Notifications",
+    pushNotifications: "Push Notifications",
+    securityPrivacy: "Security & Privacy",
+    privacyPolicy: "Privacy Policy",
+    termsOfService: "Terms of Service",
+    about: "About",
+    appVersion: "App Version",
+    build: "Build",
+    deleteAccount: "Delete Account",
+    signOut: "Sign Out",
+    appearance: "Appearance",
+    selectLanguage: "Select Language",
+    noShowCounter: "No show counter",
+    balance: "Balance",
+    bonus: "Bonus",
+    contactSupport: "Contact support:",
+    cancel: "Cancel",
+    delete: "Delete",
+    close: "Close",
+    add: "+ Add",
+    noCarsRegistered: "No cars registered",
+  },
+  kk: {
+    // Navigation
+    home: "Басты",
+    map: "Карта",
+    booking: "Брондау",
+    wallet: "Әмиян",
+    profile: "Профиль",
+    // Home
+    welcomeBack: "Қош келдіңіз,",
+    findParking: "Тұрақ табу",
+    activeSession: "Белсенді сессия",
+    myCars: "Менің көліктерім",
+    recentActivity: "Соңғы әрекеттер",
+    // Profile
+    settings: "Баптаулар",
+    darkMode: "Қараңғы режим",
+    language: "Тіл",
+    notifications: "Хабарландырулар",
+    pushNotifications: "Push хабарландырулар",
+    securityPrivacy: "Қауіпсіздік және құпиялылық",
+    privacyPolicy: "Құпиялылық саясаты",
+    termsOfService: "Қызмет көрсету шарттары",
+    about: "Қосымша туралы",
+    appVersion: "Қосымша нұсқасы",
+    build: "Құрастыру",
+    deleteAccount: "Аккаунтты жою",
+    signOut: "Шығу",
+    appearance: "Сыртқы түрі",
+    selectLanguage: "Тілді таңдау",
+    noShowCounter: "Келмеу есептегіші",
+    balance: "Баланс",
+    bonus: "Бонус",
+    contactSupport: "Қолдау қызметі:",
+    cancel: "Бас тарту",
+    delete: "Жою",
+    close: "Жабу",
+    add: "+ Қосу",
+    noCarsRegistered: "Көліктер тіркелмеген",
+  },
+  ru: {
+    // Navigation
+    home: "Главная",
+    map: "Карта",
+    booking: "Бронь",
+    wallet: "Кошелёк",
+    profile: "Профиль",
+    // Home
+    welcomeBack: "С возвращением,",
+    findParking: "Найти парковку",
+    activeSession: "Активная сессия",
+    myCars: "Мои авто",
+    recentActivity: "Недавняя активность",
+    // Profile
+    settings: "Настройки",
+    darkMode: "Тёмный режим",
+    language: "Язык",
+    notifications: "Уведомления",
+    pushNotifications: "Push уведомления",
+    securityPrivacy: "Безопасность и конфиденциальность",
+    privacyPolicy: "Политика конфиденциальности",
+    termsOfService: "Условия использования",
+    about: "О приложении",
+    appVersion: "Версия приложения",
+    build: "Сборка",
+    deleteAccount: "Удалить аккаунт",
+    signOut: "Выйти",
+    appearance: "Внешний вид",
+    selectLanguage: "Выбрать язык",
+    noShowCounter: "Счётчик неявок",
+    balance: "Баланс",
+    bonus: "Бонус",
+    contactSupport: "Поддержка:",
+    cancel: "Отмена",
+    delete: "Удалить",
+    close: "Закрыть",
+    add: "+ Добавить",
+    noCarsRegistered: "Нет зарегистрированных авто",
+  },
+}
+
 interface ParkingContextType {
   // App state
   currentScreen: string
@@ -88,6 +211,13 @@ interface ParkingContextType {
   // Admin mode
   isAdminMode: boolean
   setIsAdminMode: (admin: boolean) => void
+  
+  // Theme & Language
+  darkMode: boolean
+  setDarkMode: (dark: boolean) => void
+  language: Language
+  setLanguage: (lang: Language) => void
+  t: typeof translations.en
 }
 
 const ParkingContext = createContext<ParkingContextType | undefined>(undefined)
@@ -156,6 +286,10 @@ export function ParkingProvider({ children }: { children: ReactNode }) {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [selectedSpot, setSelectedSpot] = useState<ParkingSpot | null>(null)
   const [isAdminMode, setIsAdminMode] = useState(false)
+  const [darkMode, setDarkMode] = useState(false)
+  const [language, setLanguage] = useState<Language>("en")
+  
+  const t = translations[language]
   
   const updateSpot = (spotId: string, updates: Partial<ParkingSpot>) => {
     setSpots(prev => prev.map(spot => 
@@ -182,6 +316,11 @@ export function ParkingProvider({ children }: { children: ReactNode }) {
       setSelectedSpot,
       isAdminMode,
       setIsAdminMode,
+      darkMode,
+      setDarkMode,
+      language,
+      setLanguage,
+      t,
     }}>
       {children}
     </ParkingContext.Provider>

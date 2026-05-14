@@ -7,19 +7,19 @@ import { AlertTriangle, Plus, Trash2, LogOut, Settings, Bell, User, ChevronRight
 import Image from "next/image"
 
 export function ProfileScreen() {
-  const { user, setUser, setIsAuthenticated, setCurrentScreen } = useParking()
+  const { user, setUser, setIsAuthenticated, setCurrentScreen, darkMode, setDarkMode, language, setLanguage, t } = useParking()
   const [isAddingCar, setIsAddingCar] = useState(false)
   const [newCar, setNewCar] = useState({ brand: "", model: "", plateNumber: "" })
   const [showSettings, setShowSettings] = useState(false)
-  const [darkMode, setDarkMode] = useState(false)
   const [notifications, setNotifications] = useState(true)
   const [isEditingName, setIsEditingName] = useState(false)
   const [editedName, setEditedName] = useState(user?.name || "")
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false)
   const [showTermsOfService, setShowTermsOfService] = useState(false)
   const [showLanguageSelect, setShowLanguageSelect] = useState(false)
-  const [selectedLanguage, setSelectedLanguage] = useState("English")
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  
+  const languageNames = { en: "English", kk: "Қазақша", ru: "Русский" }
   
   const handleAddCar = () => {
     if (!user || !newCar.brand || !newCar.model || !newCar.plateNumber) return
@@ -71,9 +71,9 @@ export function ProfileScreen() {
   // Settings Page
   if (showSettings) {
     return (
-      <div className="flex flex-col h-full bg-gray-50">
+      <div className={`flex flex-col h-full ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
         {/* Settings Header */}
-        <div className="bg-[#495E8E] rounded-b-[2.5rem] px-5 pt-6 pb-8 shadow-lg">
+        <div className={`${darkMode ? 'bg-[#2a3654]' : 'bg-[#495E8E]'} rounded-b-[2.5rem] px-5 pt-6 pb-8 shadow-lg`}>
           <div className="flex items-center gap-3 mb-2">
             <button 
               onClick={() => setShowSettings(false)}
@@ -81,20 +81,20 @@ export function ProfileScreen() {
             >
               <ChevronLeft className="w-5 h-5 text-white" />
             </button>
-            <h1 className="text-xl font-bold text-white">Settings</h1>
+            <h1 className="text-xl font-bold text-white">{t.settings}</h1>
           </div>
         </div>
 
         {/* Settings Content */}
         <div className="flex-1 px-4 py-6 overflow-y-auto pb-32">
           {/* Appearance */}
-          <div className="bg-white rounded-3xl p-4 mb-4 shadow-lg">
-            <h3 className="text-sm font-semibold text-gray-400 uppercase mb-3">Appearance</h3>
+          <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-3xl p-4 mb-4 shadow-lg`}>
+            <h3 className={`text-sm font-semibold ${darkMode ? 'text-gray-400' : 'text-gray-400'} uppercase mb-3`}>{t.appearance}</h3>
             
             <div className="flex items-center justify-between py-3">
               <div className="flex items-center gap-3">
-                <Moon className="w-5 h-5 text-[#34415F]" />
-                <span className="font-medium text-gray-900">Dark Mode</span>
+                <Moon className={`w-5 h-5 ${darkMode ? 'text-white' : 'text-[#34415F]'}`} />
+                <span className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>{t.darkMode}</span>
               </div>
               <button 
                 onClick={() => setDarkMode(!darkMode)}
@@ -106,27 +106,27 @@ export function ProfileScreen() {
             
             <button 
               onClick={() => setShowLanguageSelect(true)}
-              className="flex items-center justify-between py-3 border-t border-gray-100 w-full"
+              className={`flex items-center justify-between py-3 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'} w-full`}
             >
               <div className="flex items-center gap-3">
-                <Globe className="w-5 h-5 text-[#34415F]" />
-                <span className="font-medium text-gray-900">Language</span>
+                <Globe className={`w-5 h-5 ${darkMode ? 'text-white' : 'text-[#34415F]'}`} />
+                <span className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>{t.language}</span>
               </div>
-              <div className="flex items-center gap-1 text-gray-500">
-                <span className="text-sm">{selectedLanguage}</span>
+              <div className={`flex items-center gap-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                <span className="text-sm">{languageNames[language]}</span>
                 <ChevronRight className="w-4 h-4" />
               </div>
             </button>
           </div>
 
           {/* Notifications */}
-          <div className="bg-white rounded-3xl p-4 mb-4 shadow-lg">
-            <h3 className="text-sm font-semibold text-gray-400 uppercase mb-3">Notifications</h3>
+          <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-3xl p-4 mb-4 shadow-lg`}>
+            <h3 className={`text-sm font-semibold ${darkMode ? 'text-gray-400' : 'text-gray-400'} uppercase mb-3`}>{t.notifications}</h3>
             
             <div className="flex items-center justify-between py-3">
               <div className="flex items-center gap-3">
-                <Bell className="w-5 h-5 text-[#34415F]" />
-                <span className="font-medium text-gray-900">Push Notifications</span>
+                <Bell className={`w-5 h-5 ${darkMode ? 'text-white' : 'text-[#34415F]'}`} />
+                <span className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>{t.pushNotifications}</span>
               </div>
               <button 
                 onClick={() => setNotifications(!notifications)}
@@ -138,44 +138,44 @@ export function ProfileScreen() {
           </div>
 
           {/* Security & Privacy */}
-          <div className="bg-white rounded-3xl p-4 mb-4 shadow-lg">
-            <h3 className="text-sm font-semibold text-gray-400 uppercase mb-3">Security & Privacy</h3>
+          <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-3xl p-4 mb-4 shadow-lg`}>
+            <h3 className={`text-sm font-semibold ${darkMode ? 'text-gray-400' : 'text-gray-400'} uppercase mb-3`}>{t.securityPrivacy}</h3>
             
             <button 
               onClick={() => setShowPrivacyPolicy(true)}
               className="flex items-center justify-between py-3 w-full"
             >
               <div className="flex items-center gap-3">
-                <Shield className="w-5 h-5 text-[#34415F]" />
-                <span className="font-medium text-gray-900">Privacy Policy</span>
+                <Shield className={`w-5 h-5 ${darkMode ? 'text-white' : 'text-[#34415F]'}`} />
+                <span className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>{t.privacyPolicy}</span>
               </div>
-              <ChevronRight className="w-5 h-5 text-gray-400" />
+              <ChevronRight className={`w-5 h-5 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
             </button>
             
             <button 
               onClick={() => setShowTermsOfService(true)}
-              className="flex items-center justify-between py-3 border-t border-gray-100 w-full"
+              className={`flex items-center justify-between py-3 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'} w-full`}
             >
               <div className="flex items-center gap-3">
-                <HelpCircle className="w-5 h-5 text-[#34415F]" />
-                <span className="font-medium text-gray-900">Terms of Service</span>
+                <HelpCircle className={`w-5 h-5 ${darkMode ? 'text-white' : 'text-[#34415F]'}`} />
+                <span className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>{t.termsOfService}</span>
               </div>
-              <ChevronRight className="w-5 h-5 text-gray-400" />
+              <ChevronRight className={`w-5 h-5 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
             </button>
           </div>
 
           {/* App Info */}
-          <div className="bg-white rounded-3xl p-4 mb-4 shadow-lg">
-            <h3 className="text-sm font-semibold text-gray-400 uppercase mb-3">About</h3>
+          <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-3xl p-4 mb-4 shadow-lg`}>
+            <h3 className={`text-sm font-semibold ${darkMode ? 'text-gray-400' : 'text-gray-400'} uppercase mb-3`}>{t.about}</h3>
             
             <div className="flex items-center justify-between py-3">
-              <span className="font-medium text-gray-900">App Version</span>
-              <span className="text-sm text-gray-500">1.0.0</span>
+              <span className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>{t.appVersion}</span>
+              <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>1.0.0</span>
             </div>
             
-            <div className="flex items-center justify-between py-3 border-t border-gray-100">
-              <span className="font-medium text-gray-900">Build</span>
-              <span className="text-sm text-gray-500">2026.05.14</span>
+            <div className={`flex items-center justify-between py-3 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+              <span className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>{t.build}</span>
+              <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>2026.05.14</span>
             </div>
           </div>
 
@@ -184,38 +184,42 @@ export function ProfileScreen() {
             onClick={() => setShowDeleteConfirm(true)}
             className="w-full py-4 text-red-500 font-medium text-center hover:text-red-600 transition-colors"
           >
-            Delete Account
+            {t.deleteAccount}
           </button>
         </div>
 
         {/* Language Select Modal */}
         {showLanguageSelect && (
           <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50">
-            <div className="mx-4 w-full max-w-[320px] overflow-hidden rounded-2xl bg-white shadow-xl">
-              <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
-                <h3 className="text-lg font-bold text-gray-900">Select Language</h3>
+            <div className={`mx-4 w-full max-w-[320px] overflow-hidden rounded-2xl ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-xl`}>
+              <div className={`flex items-center justify-between border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'} px-5 py-4`}>
+                <h3 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{t.selectLanguage}</h3>
                 <button 
                   onClick={() => setShowLanguageSelect(false)}
-                  className="p-1 rounded-full hover:bg-gray-100"
+                  className={`p-1 rounded-full ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
                 >
-                  <X className="w-5 h-5 text-gray-500" />
+                  <X className={`w-5 h-5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
                 </button>
               </div>
               <div className="p-2">
-                {["English", "Kazakh", "Russian"].map((lang) => (
+                {([
+                  { code: "en" as const, name: "English" },
+                  { code: "kk" as const, name: "Қазақша" },
+                  { code: "ru" as const, name: "Русский" }
+                ]).map((lang) => (
                   <button
-                    key={lang}
+                    key={lang.code}
                     onClick={() => {
-                      setSelectedLanguage(lang)
+                      setLanguage(lang.code)
                       setShowLanguageSelect(false)
                     }}
                     className={`w-full text-left px-4 py-3 rounded-xl transition-colors ${
-                      selectedLanguage === lang 
+                      language === lang.code 
                         ? "bg-[#495E8E] text-white" 
-                        : "hover:bg-gray-100 text-gray-900"
+                        : darkMode ? "hover:bg-gray-700 text-white" : "hover:bg-gray-100 text-gray-900"
                     }`}
                   >
-                    {lang}
+                    {lang.name}
                   </button>
                 ))}
               </div>
@@ -384,12 +388,12 @@ export function ProfileScreen() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
+    <div className={`flex flex-col h-full ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
       {/* Top Profile Card */}
-      <div className="bg-[#495E8E] rounded-b-[2.5rem] px-5 pt-6 pb-6 shadow-lg">
+      <div className={`${darkMode ? 'bg-[#2a3654]' : 'bg-[#495E8E]'} rounded-b-[2.5rem] px-5 pt-6 pb-6 shadow-lg`}>
         {/* Header Row */}
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-xl font-bold text-white">Profile</h1>
+          <h1 className="text-xl font-bold text-white">{t.profile}</h1>
           <div className="flex items-center gap-3">
             <button 
               onClick={() => setShowSettings(true)}
@@ -460,7 +464,7 @@ export function ProfileScreen() {
               </svg>
               <p className="text-white font-bold text-xl">1500₸</p>
             </div>
-            <p className="text-white/70 text-xs">Баланс</p>
+            <p className="text-white/70 text-xs">{t.balance}</p>
           </div>
           <div className="flex-1 bg-white/10 rounded-2xl p-4 backdrop-blur-sm border border-white/20">
             <div className="flex items-center gap-2 mb-1">
@@ -469,7 +473,7 @@ export function ProfileScreen() {
               </svg>
               <p className="text-white font-bold text-xl">50</p>
             </div>
-            <p className="text-white/70 text-xs">Бонус</p>
+            <p className="text-white/70 text-xs">{t.bonus}</p>
           </div>
         </div>
       </div>
@@ -477,12 +481,12 @@ export function ProfileScreen() {
       {/* Main Content Area */}
       <div className="flex-1 px-4 py-4 overflow-y-auto pb-32">
         {/* No-Show Counter */}
-        <div className="bg-[#7A8BA8] rounded-3xl p-4 mb-4 shadow-lg">
+        <div className={`${darkMode ? 'bg-[#5a6b87]' : 'bg-[#7A8BA8]'} rounded-3xl p-4 mb-4 shadow-lg`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <AlertTriangle className="w-6 h-6 text-white" />
               <div>
-                <p className="font-semibold text-white">No show counter</p>
+                <p className="font-semibold text-white">{t.noShowCounter}</p>
                 <p className="text-sm text-white/70">{user?.noShowCount || 1} of 6 (ban at 6)</p>
               </div>
             </div>
@@ -493,7 +497,7 @@ export function ProfileScreen() {
         </div>
 
         {/* My Cars */}
-        <div className="bg-[#7A8BA8] rounded-3xl p-4 mb-4 shadow-lg">
+        <div className={`${darkMode ? 'bg-[#5a6b87]' : 'bg-[#7A8BA8]'} rounded-3xl p-4 mb-4 shadow-lg`}>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <Image 
@@ -503,13 +507,13 @@ export function ProfileScreen() {
                 height={24}
                 className="object-contain brightness-0 invert"
               />
-              <p className="font-semibold text-white">My cars</p>
+              <p className="font-semibold text-white">{t.myCars}</p>
             </div>
             <button 
               onClick={() => setIsAddingCar(true)}
               className="flex items-center gap-1 px-3 py-1 bg-white/20 rounded-full text-white font-medium text-sm hover:bg-white/30 transition-colors"
             >
-              + Add
+              {t.add}
             </button>
           </div>
 
@@ -558,65 +562,65 @@ export function ProfileScreen() {
                   }}
                   className="flex-1 py-3 rounded-xl border border-white/30 font-medium text-white hover:bg-white/10 transition-colors"
                 >
-                  Cancel
+                  {t.cancel}
                 </button>
                 <button 
                   onClick={handleAddCar}
                   disabled={!newCar.brand || !newCar.model || !newCar.plateNumber}
                   className="flex-1 py-3 rounded-xl bg-white text-[#34415F] font-medium hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Add Car
+                  {t.add}
                 </button>
               </div>
             </div>
           )}
 
           {(!user?.cars || user.cars.length === 0) && !isAddingCar && (
-            <p className="py-4 text-center text-white/50 border-t border-white/20">No cars registered</p>
+            <p className="py-4 text-center text-white/50 border-t border-white/20">{t.noCarsRegistered}</p>
           )}
         </div>
 
         {/* Support */}
-        <p className="text-center text-gray-500 text-sm mb-4">
-          Contact support: <span className="font-medium text-gray-700">+7 708 239 51 19</span>
+        <p className={`text-center ${darkMode ? 'text-gray-400' : 'text-gray-500'} text-sm mb-4`}>
+          {t.contactSupport} <span className={`font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>+7 708 239 51 19</span>
         </p>
 
         {/* Sign Out Button */}
         <button 
           onClick={handleSignOut}
-          className="w-full flex items-center justify-center gap-2 py-4 rounded-3xl bg-[#495E8E] text-white font-semibold hover:bg-[#3d4c73] transition-colors shadow-lg"
+          className={`w-full flex items-center justify-center gap-2 py-4 rounded-3xl ${darkMode ? 'bg-[#2a3654]' : 'bg-[#495E8E]'} text-white font-semibold hover:opacity-90 transition-colors shadow-lg`}
         >
           <LogOut className="w-5 h-5 rotate-180" />
-          Sign Out
+          {t.signOut}
         </button>
       </div>
 
       {/* Bottom Navigation */}
-      <div className="absolute bottom-0 left-0 right-0 h-20 bg-white border-t border-gray-200 z-50">
+      <div className={`absolute bottom-0 left-0 right-0 h-20 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-t z-50`}>
         <div className="flex justify-around items-center h-full px-4">
           {[
-            { id: "home", icon: "/Home_light.svg", activeIcon: "/Home_light_active.svg", label: "Home", active: false },
-            { id: "map", icon: "/Map_light.svg", activeIcon: "/Map_light_active.svg", label: "Map", active: false },
-            { id: "booking", icon: "/Component.svg", activeIcon: "/Component_active.svg", label: "Booking", active: false },
-            { id: "wallet", icon: "/wallet.svg", activeIcon: "/wallet_active.svg", label: "Wallet", active: false },
-            { id: "profile", icon: "/User_cicrle_light.svg", activeIcon: "/User_cicrle_light_active.svg", label: "Profile", active: true },
+            { id: "home", icon: "/Home_light.svg", activeIcon: "/Home_light_active.svg", labelKey: "home" as const, active: false },
+            { id: "map", icon: "/Map_light.svg", activeIcon: "/Map_light_active.svg", labelKey: "map" as const, active: false },
+            { id: "booking", icon: "/Component.svg", activeIcon: "/Component_active.svg", labelKey: "booking" as const, active: false },
+            { id: "wallet", icon: "/wallet.svg", activeIcon: "/wallet_active.svg", labelKey: "wallet" as const, active: false },
+            { id: "profile", icon: "/User_cicrle_light.svg", activeIcon: "/User_cicrle_light_active.svg", labelKey: "profile" as const, active: true },
           ].map((item) => (
             <button
               key={item.id}
               onClick={() => setCurrentScreen(item.id)}
-              className="flex flex-col items-center justify-center gap-0.5 p-3 transition-all hover:bg-gray-100 rounded-xl active:scale-95"
+              className={`flex flex-col items-center justify-center gap-0.5 p-3 transition-all ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} rounded-xl active:scale-95`}
             >
               <div className="w-8 h-8 flex items-center justify-center">
                 <img 
                   src={item.active ? item.activeIcon : item.icon} 
-                  alt={item.label} 
+                  alt={t[item.labelKey]} 
                   width={28}
                   height={28}
                   className={item.active ? "opacity-100" : "opacity-80"}
                 />
               </div>
-              <span className={`text-xs font-medium ${item.active ? "text-[#36549B]" : "text-gray-900"}`}>
-                {item.label}
+              <span className={`text-xs font-medium ${item.active ? "text-[#36549B]" : darkMode ? "text-gray-300" : "text-gray-900"}`}>
+                {t[item.labelKey]}
               </span>
             </button>
           ))}

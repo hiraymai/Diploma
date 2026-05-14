@@ -5,23 +5,23 @@ import { useParking } from "@/lib/parking-context"
 import Image from "next/image"
 
 export function HomeScreen() {
-  const { setCurrentScreen, user } = useParking()
+  const { setCurrentScreen, user, darkMode, t } = useParking()
   const [activeTab, setActiveTab] = useState("home")
 
   const navItems = [
-    { id: "home", icon: "/Home_light.svg", activeIcon: "/Home_light_active.svg", label: "Home", active: true },
-    { id: "map", icon: "/Map_light.svg", activeIcon: "/Map_light_active.svg", label: "Map", active: false },
-    { id: "booking", icon: "/Component.svg", activeIcon: "/Component_active.svg", label: "Booking", active: false },
-    { id: "wallet", icon: "/wallet.svg", activeIcon: "/wallet_active.svg", label: "Wallet", active: false },
-    { id: "profile", icon: "/User_cicrle_light.svg", activeIcon: "/User_cicrle_light_active.svg", label: "Profile", active: false },
+    { id: "home", icon: "/Home_light.svg", activeIcon: "/Home_light_active.svg", labelKey: "home" as const, active: true },
+    { id: "map", icon: "/Map_light.svg", activeIcon: "/Map_light_active.svg", labelKey: "map" as const, active: false },
+    { id: "booking", icon: "/Component.svg", activeIcon: "/Component_active.svg", labelKey: "booking" as const, active: false },
+    { id: "wallet", icon: "/wallet.svg", activeIcon: "/wallet_active.svg", labelKey: "wallet" as const, active: false },
+    { id: "profile", icon: "/User_cicrle_light.svg", activeIcon: "/User_cicrle_light_active.svg", labelKey: "profile" as const, active: false },
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className={`min-h-screen ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
       {/* Main content */}
       <div className="px-6 py-4 pb-24">
         {/* Blue Header Card */}
-        <div className="bg-[#495E8E] rounded-b-[20px] p-4 pb-6 mb-6 shadow-md flex flex-col">
+        <div className={`${darkMode ? 'bg-[#2a3654]' : 'bg-[#495E8E]'} rounded-b-[20px] p-4 pb-6 mb-6 shadow-md flex flex-col`}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center overflow-hidden">
@@ -35,7 +35,7 @@ export function HomeScreen() {
                 />
               </div>
               <div>
-                <p className="text-gray-200 text-sm">Welcome back,</p>
+                <p className="text-gray-200 text-sm">{t.welcomeBack}</p>
                 <p className="text-white text-xl font-extrabold">{user?.name || "User Name"}</p>
               </div>
             </div>
@@ -185,7 +185,7 @@ export function HomeScreen() {
                     className="object-contain filter brightness-0 invert"
                   />
                   <div className="text-left">
-                    <span className="text-white font-bold text-xl drop-shadow-md">My cars</span>
+                    <span className="text-white font-bold text-xl drop-shadow-md">{t.myCars}</span>
                     <p className="text-white/70 text-sm">1 registered</p>
                   </div>
                 </div>
@@ -226,25 +226,25 @@ export function HomeScreen() {
       </div>
       
       {/* Bottom Navigation */}
-      <div className="absolute bottom-0 left-0 right-0 h-20 bg-white border-t border-gray-300 z-50 shadow-lg" style={{ borderTop: '1px solid #D1D5DB' }}>
+      <div className={`absolute bottom-0 left-0 right-0 h-20 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-300'} border-t z-50 shadow-lg`}>
         <div className="flex justify-around items-center h-full px-4">
           {navItems.map((item) => (
             <button
               key={item.id}
               onClick={() => setCurrentScreen(item.id)}
-              className="flex flex-col items-center justify-center gap-0.5 p-3 transition-all hover:bg-gray-100 rounded-xl active:scale-95"
+              className={`flex flex-col items-center justify-center gap-0.5 p-3 transition-all ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} rounded-xl active:scale-95`}
             >
               <div className="w-8 h-8 flex items-center justify-center">
                 <img 
                   src={item.active ? item.activeIcon : item.icon} 
-                  alt={item.label} 
+                  alt={t[item.labelKey]} 
                   width={28}
                   height={28}
                   className={item.active ? "opacity-100" : "opacity-80"}
                 />
               </div>
-              <span className={`text-xs font-medium ${item.active ? "text-[#36549B] drop-shadow-sm" : "text-gray-900 drop-shadow-sm"}`}>
-                {item.label}
+              <span className={`text-xs font-medium ${item.active ? "text-[#36549B] drop-shadow-sm" : darkMode ? "text-gray-300 drop-shadow-sm" : "text-gray-900 drop-shadow-sm"}`}>
+                {t[item.labelKey]}
               </span>
             </button>
           ))}
