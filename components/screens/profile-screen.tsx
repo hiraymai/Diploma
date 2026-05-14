@@ -250,7 +250,7 @@ export function ProfileScreen() {
       {/* Main Content Area */}
       <div className="flex-1 px-4 py-4 overflow-y-auto pb-32">
         {/* No-Show Counter */}
-        <div className="bg-[#34415F] rounded-3xl p-4 mb-4 shadow-lg">
+        <div className="bg-[#5A6B87] rounded-3xl p-4 mb-4 shadow-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <AlertTriangle className="w-6 h-6 text-white" />
@@ -266,7 +266,7 @@ export function ProfileScreen() {
         </div>
 
         {/* My Cars */}
-        <div className="bg-[#34415F] rounded-3xl p-4 mb-4 shadow-lg">
+        <div className="bg-[#5A6B87] rounded-3xl p-4 mb-4 shadow-lg">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <Image 
@@ -274,7 +274,7 @@ export function ProfileScreen() {
                 alt="Car" 
                 width={24}
                 height={24}
-                className="object-contain invert"
+                className="object-contain brightness-0 invert"
               />
               <p className="font-semibold text-white">My cars</p>
             </div>
