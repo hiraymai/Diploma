@@ -106,8 +106,8 @@ export function WalletScreen() {
               disabled={!selectedAmount}
               className={`flex-1 py-4 rounded-2xl font-semibold text-base transition-colors ${
                 selectedAmount
-                  ? "bg-[#85B6FF] text-white hover:bg-[#6da3f0]"
-                  : "bg-[#85B6FF]/50 text-white/70 cursor-not-allowed"
+                  ? "bg-[#354469] text-white hover:bg-[#2a3654]"
+                  : "bg-[#354469]/50 text-white/70 cursor-not-allowed"
               }`}
             >
               Pay with Stripe
