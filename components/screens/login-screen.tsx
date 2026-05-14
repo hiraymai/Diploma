@@ -114,13 +114,13 @@ export function LoginScreen() {
       {/* Header - White rounded top section */}
       <div className="bg-white rounded-b-3xl px-6 py-8 shadow-md">
         <div className="flex flex-col items-center">
-          <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4">
+          <div className="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center mb-4 shadow-md">
             <Image 
               src="/app_icon2.svg" 
               alt="QPark Logo" 
-              width={200}
-              height={200}
-              className="object-fill"
+              width={80}
+              height={80}
+              className="object-cover rounded-full"
             />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 drop-shadow-sm">QPark</h1>
