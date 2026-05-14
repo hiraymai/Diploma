@@ -1,6 +1,9 @@
 "use client"
 
-import { createContext, useContext, useState, type ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react"
+import { onAuthStateChanged, signOut as firebaseSignOut } from "firebase/auth"
+import { auth } from "@/lib/firebase/config"
+import { supabase, getUserByFirebaseUID, createUser, getUserCars, getParkingSpots, getUserBookings, getUserTransactions } from "@/lib/supabase/client"
 
 export type SpotStatus = "FREE" | "BOOKED" | "OCCUPIED" | "RESERVED" | "REPAIR"
 export type SpotType = "SHORT_TERM" | "LONG_TERM"
@@ -24,12 +27,13 @@ export interface Car {
 
 export interface User {
   id: string
+  firebaseUid: string
   name: string
   phone: string
   balance: number
   bonusPoints: number
   noShowCount: number
-  cars: Car[]
+  isBanned: boolean
 }
 
 export interface ActiveBooking {
@@ -44,6 +48,14 @@ export interface ActiveBooking {
   isPaid: boolean
 }
 
+export interface Transaction {
+  id: string
+  type: "TOPUP" | "PAYMENT" | "REFUND" | "CASHBACK"
+  amount: number
+  description: string | null
+  createdAt: Date
+}
+
 // Translations
 export type Language = "en" | "kk" | "ru"
 
@@ -55,6 +67,22 @@ export const translations = {
     booking: "Booking",
     wallet: "Wallet",
     profile: "Profile",
+    // Auth
+    enterPhone: "Enter your phone number",
+    sendCode: "We'll send you a verification code",
+    continue: "Continue",
+    verifyPhone: "Verify your phone",
+    codeSent: "Code sent to",
+    verify: "Verify",
+    resendCode: "Resend code",
+    resendIn: "Resend code in",
+    invalidPhone: "Invalid phone number",
+    invalidOtp: "Please enter 6-digit code",
+    back: "Back",
+    termsAgree: "By continuing, you agree to our",
+    and: "and",
+    smartParking: "Smart Parking Solution",
+    loading: "Loading...",
     // Home
     welcomeBack: "Welcome back,",
     findParking: "Find parking",
@@ -98,66 +126,81 @@ export const translations = {
     close: "Close",
     add: "+ Add",
     noCarsRegistered: "No cars registered",
+    // Wallet
+    topUp: "Top Up",
+    history: "History",
+    enterAmount: "Enter amount",
+    promoCode: "Promo code",
+    apply: "Apply",
+    pay: "Pay",
+    transactionHistory: "Transaction history",
+    noTransactions: "No transactions yet",
+    payment: "Payment",
+    topUpWallet: "Top up wallet",
+    refund: "Refund",
+    cashback: "Cashback",
     // Map
     parkingMap: "Parking Map",
-    spots: "spots",
-    free: "Free",
+    selectSpot: "Select a spot",
+    floor: "Floor",
+    available: "Available",
     booked: "Booked",
     occupied: "Occupied",
     reserved: "Reserved",
-    repair: "Repair",
-    // Wallet
-    manageBalance: "Manage your balance",
-    currentBalance: "Current balance",
-    topUpBalance: "+ Top up balance",
-    promoCodeAvailable: "Promo Code Available",
-    promoDescription: "FIRST - 150₸ off your first parking",
-    active: "Active",
-    transactionHistory: "Transaction History",
-    walletTopUp: "Wallet top-up via",
-    selectAmount: "Select Amount",
-    payWithStripe: "Pay with Stripe",
-    poweredByStripe: "Powered by Stripe (Test Mode)",
+    underRepair: "Under repair",
     // Booking
+    spotDetails: "Spot Details",
+    hourlyRate: "Hourly rate",
+    dailyRate: "Daily rate",
+    bookThisSpot: "Book this spot",
+    confirmBooking: "Confirm Booking",
+    parkingDuration: "Parking duration",
+    hours: "hours",
+    days: "days",
+    estimatedCost: "Estimated cost",
+    confirm: "Confirm",
+    bookingConfirmed: "Booking Confirmed!",
+    yourSpot: "Your spot",
+    timeRemaining: "Time remaining",
+    arrivedBtn: "I've Arrived",
+    endSession: "End Session",
+    extendSession: "Extend Session",
+    payNow: "Pay Now",
     noActiveBooking: "No active booking",
-    findParkingBtn: "Find Parking",
-    activeBookingTitle: "Active Booking",
-    longTermReservation: "Long-term reservation",
-    shortTermParking: "Short-term parking",
-    parked: "Parked",
-    enRoute: "En Route",
-    timeToArrive: "Time to arrive",
-    hurry: "Hurry! Your booking will expire soon.",
-    simulateArrival: "Simulate Arrival",
-    parkingDuration: "Parking Duration",
-    currentCost: "Current Cost",
-    rentalPeriod: "Rental Period",
-    daysRemaining: "days remaining",
-    paid: "Paid",
-    parkingSpot: "Parking Spot",
-    vehicle: "Vehicle",
-    entryMethod: "Entry Method",
-    lprCamera: "LPR Camera",
-    autoPlateRecognition: "Automatic plate recognition",
-    costBreakdown: "Cost Breakdown",
-    firstHourMin: "First hour (minimum)",
-    extraTime: "Extra time",
-    total: "Total",
-    payAndExit: "Pay & Exit",
-    processing: "Processing...",
-    cancelBooking: "Cancel Booking",
-    extendRental: "Extend Rental",
+    browseSpots: "Browse available spots",
+    rentalPeriod: "Rental period",
+    day: "day",
+    week: "week",
+    twoWeeks: "2 weeks",
+    selectRentalPeriod: "Select rental period",
+    totalCost: "Total cost",
   },
   kk: {
     // Navigation
-    home: "Басты",
+    home: "Басты бет",
     map: "Карта",
     booking: "Брондау",
     wallet: "Әмиян",
     profile: "Профиль",
+    // Auth
+    enterPhone: "Телефон нөміріңізді енгізіңіз",
+    sendCode: "Біз сізге растау кодын жібереміз",
+    continue: "Жалғастыру",
+    verifyPhone: "Телефонды растау",
+    codeSent: "Код жіберілді",
+    verify: "Растау",
+    resendCode: "Кодты қайта жіберу",
+    resendIn: "Кодты қайта жіберу",
+    invalidPhone: "Қате телефон нөмірі",
+    invalidOtp: "6 санды код енгізіңіз",
+    back: "Артқа",
+    termsAgree: "Жалғастыра отырып, сіз келісесіз",
+    and: "және",
+    smartParking: "Ақылды паркинг шешімі",
+    loading: "Жүктелуде...",
     // Home
-    welcomeBack: "Қош келдіңіз,",
-    findParking: "Тұрақ табу",
+    welcomeBack: "Қайта келдіңіз,",
+    findParking: "Паркинг табу",
     activeSession: "Белсенді сессия",
     myCars: "Менің көліктерім",
     recentActivity: "Соңғы әрекеттер",
@@ -167,14 +210,14 @@ export const translations = {
     spotsAvailable: "орын бар",
     quickActions: "Жылдам әрекеттер",
     bookNow: "Қазір брондау",
-    findAvailableParking: "Бос тұрақ табу",
+    findAvailableParking: "Бос паркинг табу",
     registered: "тіркелген",
     specialOffer: "Арнайы ұсыныс!",
-    getDiscount: "Бірінші брондауға 50% жеңілдік",
+    getDiscount: "Алғашқы брондауға 50% жеңілдік",
     activeBooking: "Белсенді брондау",
     remaining: "қалды",
     // Profile
-    settings: "Баптаулар",
+    settings: "Параметрлер",
     darkMode: "Қараңғы режим",
     language: "Тіл",
     notifications: "Хабарландырулар",
@@ -187,7 +230,7 @@ export const translations = {
     build: "Құрастыру",
     deleteAccount: "Аккаунтты жою",
     signOut: "Шығу",
-    appearance: "Сыртқы түрі",
+    appearance: "Көрініс",
     selectLanguage: "Тілді таңдау",
     noShowCounter: "Келмеу есептегіші",
     balance: "Баланс",
@@ -198,55 +241,54 @@ export const translations = {
     close: "Жабу",
     add: "+ Қосу",
     noCarsRegistered: "Көліктер тіркелмеген",
+    // Wallet
+    topUp: "Толтыру",
+    history: "Тарих",
+    enterAmount: "Соманы енгізіңіз",
+    promoCode: "Промокод",
+    apply: "Қолдану",
+    pay: "Төлеу",
+    transactionHistory: "Транзакция тарихы",
+    noTransactions: "Транзакциялар жоқ",
+    payment: "Төлем",
+    topUpWallet: "Әмиянды толтыру",
+    refund: "Қайтару",
+    cashback: "Кэшбэк",
     // Map
-    parkingMap: "Тұрақ картасы",
-    spots: "орын",
-    free: "Бос",
+    parkingMap: "Паркинг картасы",
+    selectSpot: "Орын таңдаңыз",
+    floor: "Қабат",
+    available: "Бос",
     booked: "Брондалған",
     occupied: "Бос емес",
     reserved: "Резервтелген",
-    repair: "Жөндеуде",
-    // Wallet
-    manageBalance: "Балансты басқару",
-    currentBalance: "Ағымдағы баланс",
-    topUpBalance: "+ Балансты толтыру",
-    promoCodeAvailable: "Промокод бар",
-    promoDescription: "FIRST - бірінші тұраққа 150₸ жеңілдік",
-    active: "Белсенді",
-    transactionHistory: "Транзакция тарихы",
-    walletTopUp: "Әмиянды толтыру",
-    selectAmount: "Соманы таңдау",
-    payWithStripe: "Stripe арқылы төлеу",
-    poweredByStripe: "Stripe қуатымен (Тест режимі)",
+    underRepair: "Жөндеуде",
     // Booking
+    spotDetails: "Орын мәліметтері",
+    hourlyRate: "Сағаттық тариф",
+    dailyRate: "Күндік тариф",
+    bookThisSpot: "Осы орынды брондау",
+    confirmBooking: "Брондауды растау",
+    parkingDuration: "Паркинг ұзақтығы",
+    hours: "сағат",
+    days: "күн",
+    estimatedCost: "Болжамды құны",
+    confirm: "Растау",
+    bookingConfirmed: "Брондау расталды!",
+    yourSpot: "Сіздің орныңыз",
+    timeRemaining: "Қалған уақыт",
+    arrivedBtn: "Мен келдім",
+    endSession: "Сессияны аяқтау",
+    extendSession: "Сессияны ұзарту",
+    payNow: "Қазір төлеу",
     noActiveBooking: "Белсенді брондау жоқ",
-    findParkingBtn: "Тұрақ табу",
-    activeBookingTitle: "Белсенді брондау",
-    longTermReservation: "Ұзақ мерзімді резерв",
-    shortTermParking: "Қысқа мерзімді тұрақ",
-    parked: "Тұрақта",
-    enRoute: "Жолда",
-    timeToArrive: "Келу уақыты",
-    hurry: "Тезірек! Брондау мерзімі аяқталады.",
-    simulateArrival: "Келуді модельдеу",
-    parkingDuration: "Тұрақ ұзақтығы",
-    currentCost: "Ағымдағы құн",
+    browseSpots: "Бос орындарды қарау",
     rentalPeriod: "Жалдау мерзімі",
-    daysRemaining: "күн қалды",
-    paid: "Төленген",
-    parkingSpot: "Тұрақ орны",
-    vehicle: "Көлік",
-    entryMethod: "Кіру әдісі",
-    lprCamera: "LPR камера",
-    autoPlateRecognition: "Автоматты нөмірді тану",
-    costBreakdown: "Құн бөлімшесі",
-    firstHourMin: "Бірінші сағат (минимум)",
-    extraTime: "Қосымша уақыт",
-    total: "Барлығы",
-    payAndExit: "Төлеу және шығу",
-    processing: "Өңделуде...",
-    cancelBooking: "Брондауды болдырмау",
-    extendRental: "Жалдауды ұзарту",
+    day: "күн",
+    week: "апта",
+    twoWeeks: "2 апта",
+    selectRentalPeriod: "Жалдау мерзімін таңдаңыз",
+    totalCost: "Жалпы құны",
   },
   ru: {
     // Navigation
@@ -255,30 +297,46 @@ export const translations = {
     booking: "Бронь",
     wallet: "Кошелёк",
     profile: "Профиль",
+    // Auth
+    enterPhone: "Введите номер телефона",
+    sendCode: "Мы отправим вам код подтверждения",
+    continue: "Продолжить",
+    verifyPhone: "Подтвердите телефон",
+    codeSent: "Код отправлен на",
+    verify: "Подтвердить",
+    resendCode: "Отправить код повторно",
+    resendIn: "Повторная отправка через",
+    invalidPhone: "Неверный номер телефона",
+    invalidOtp: "Введите 6-значный код",
+    back: "Назад",
+    termsAgree: "Продолжая, вы соглашаетесь с",
+    and: "и",
+    smartParking: "Умная парковка",
+    loading: "Загрузка...",
     // Home
     welcomeBack: "С возвращением,",
     findParking: "Найти парковку",
     activeSession: "Активная сессия",
-    myCars: "Мои авто",
-    recentActivity: "Недавняя активность",
+    myCars: "Мои автомобили",
+    recentActivity: "Последние действия",
     bonusPoints: "Бонусные баллы",
     shortTerm: "Краткосрочная",
     longTerm: "Долгосрочная",
-    spotsAvailable: "мест свободно",
+    spotsAvailable: "мест доступно",
     quickActions: "Быстрые действия",
     bookNow: "Забронировать",
     findAvailableParking: "Найти свободную парковку",
     registered: "зарегистрировано",
     specialOffer: "Специальное предложение!",
     getDiscount: "Скидка 50% на первое бронирование",
-    activeBooking: "Активная бронь",
+    activeBooking: "Активное бронирование",
     remaining: "осталось",
     // Profile
     settings: "Настройки",
     darkMode: "Тёмный режим",
     language: "Язык",
     notifications: "Уведомления",
-    pushNotifications: "Push уведомления",
+    pushNotifications: "Push-уведомления",
     securityPrivacy: "Безопасность и конфиденциальность",
     privacyPolicy: "Политика конфиденциальности",
     termsOfService: "Условия использования",
@@ -287,155 +345,342 @@ export const translations = {
     build: "Сборка",
     deleteAccount: "Удалить аккаунт",
     signOut: "Выйти",
-    appearance: "Внешний вид",
-    selectLanguage: "Выбрать язык",
+    appearance: "Оформление",
+    selectLanguage: "Выберите язык",
     noShowCounter: "Счётчик неявок",
     balance: "Баланс",
     bonus: "Бонус",
-    contactSupport: "Поддержка:",
+    contactSupport: "Служба поддержки:",
     cancel: "Отмена",
     delete: "Удалить",
     close: "Закрыть",
     add: "+ Добавить",
-    noCarsRegistered: "Нет зарегистрированных авто",
+    noCarsRegistered: "Нет зарегистрированных автомобилей",
+    // Wallet
+    topUp: "Пополнить",
+    history: "История",
+    enterAmount: "Введите сумму",
+    promoCode: "Промокод",
+    apply: "Применить",
+    pay: "Оплатить",
+    transactionHistory: "История транзакций",
+    noTransactions: "Транзакций пока нет",
+    payment: "Оплата",
+    topUpWallet: "Пополнение кошелька",
+    refund: "Возврат",
+    cashback: "Кэшбэк",
     // Map
     parkingMap: "Карта парковки",
-    spots: "мест",
-    free: "Свободно",
+    selectSpot: "Выберите место",
+    floor: "Этаж",
+    available: "Свободно",
     booked: "Забронировано",
     occupied: "Занято",
     reserved: "Зарезервировано",
-    repair: "Ремонт",
-    // Wallet
-    manageBalance: "Управление балансом",
-    currentBalance: "Текущий баланс",
-    topUpBalance: "+ Пополнить баланс",
-    promoCodeAvailable: "Доступен промокод",
-    promoDescription: "FIRST - скидка 150₸ на первую парковку",
-    active: "Активен",
-    transactionHistory: "История транзакций",
-    walletTopUp: "Пополнение кошелька через",
-    selectAmount: "Выберите сумму",
-    payWithStripe: "Оплатить через Stripe",
-    poweredByStripe: "Работает на Stripe (Тестовый режим)",
+    underRepair: "На ремонте",
     // Booking
-    noActiveBooking: "Нет активных бронирований",
-    findParkingBtn: "Найти парковку",
-    activeBookingTitle: "Активная бронь",
-    longTermReservation: "Долгосрочная аренда",
-    shortTermParking: "Краткосрочная парковка",
-    parked: "Припаркован",
-    enRoute: "В пути",
-    timeToArrive: "Время до прибытия",
-    hurry: "Поторопитесь! Бронь скоро истечёт.",
-    simulateArrival: "Симулировать прибытие",
-    parkingDuration: "Длительность парковки",
-    currentCost: "Текущая стоимость",
+    spotDetails: "Информация о месте",
+    hourlyRate: "Почасовой тариф",
+    dailyRate: "Дневной тариф",
+    bookThisSpot: "Забронировать место",
+    confirmBooking: "Подтвердить бронирование",
+    parkingDuration: "Время парковки",
+    hours: "часов",
+    days: "дней",
+    estimatedCost: "Примерная стоимость",
+    confirm: "Подтвердить",
+    bookingConfirmed: "Бронирование подтверждено!",
+    yourSpot: "Ваше место",
+    timeRemaining: "Осталось времени",
+    arrivedBtn: "Я приехал",
+    endSession: "Завершить сессию",
+    extendSession: "Продлить сессию",
+    payNow: "Оплатить сейчас",
+    noActiveBooking: "Нет активного бронирования",
+    browseSpots: "Посмотреть свободные места",
     rentalPeriod: "Период аренды",
-    daysRemaining: "дней осталось",
-    paid: "Оплачено",
-    parkingSpot: "Парковочное место",
-    vehicle: "Транспорт",
-    entryMethod: "Способ въезда",
-    lprCamera: "LPR камера",
-    autoPlateRecognition: "Автоматическое распознавание номеров",
-    costBreakdown: "Детализация стоимости",
-    firstHourMin: "Первый час (минимум)",
-    extraTime: "Доп. время",
-    total: "Итого",
-    payAndExit: "Оплатить и выехать",
-    processing: "Обработка...",
-    cancelBooking: "Отменить бронь",
-    extendRental: "Продлить аренду",
-  },
+    day: "день",
+    week: "неделя",
+    twoWeeks: "2 недели",
+    selectRentalPeriod: "Выберите период аренды",
+    totalCost: "Общая стоимость",
+  }
 }
 
-// Initial parking spots data
-const initialSpots: ParkingSpot[] = [
-  { id: "A1", spotNumber: "A1", type: "SHORT_TERM", status: "FREE", floor: 1, hourlyRate: 200, dailyRate: 1500 },
-  { id: "A2", spotNumber: "A2", type: "SHORT_TERM", status: "FREE", floor: 1, hourlyRate: 200, dailyRate: 1500 },
-  { id: "A3", spotNumber: "A3", type: "SHORT_TERM", status: "OCCUPIED", floor: 1, hourlyRate: 200, dailyRate: 1500 },
-  { id: "A4", spotNumber: "A4", type: "SHORT_TERM", status: "FREE", floor: 1, hourlyRate: 200, dailyRate: 1500 },
-  { id: "A5", spotNumber: "A5", type: "SHORT_TERM", status: "REPAIR", floor: 1, hourlyRate: 200, dailyRate: 1500 },
-  { id: "A6", spotNumber: "A6", type: "SHORT_TERM", status: "FREE", floor: 1, hourlyRate: 200, dailyRate: 1500 },
-  { id: "B1", spotNumber: "B1", type: "LONG_TERM", status: "FREE", floor: 1, hourlyRate: 150, dailyRate: 1200 },
-  { id: "B2", spotNumber: "B2", type: "LONG_TERM", status: "BOOKED", floor: 1, hourlyRate: 150, dailyRate: 1200 },
-  { id: "B3", spotNumber: "B3", type: "LONG_TERM", status: "FREE", floor: 1, hourlyRate: 150, dailyRate: 1200 },
-  { id: "B4", spotNumber: "B4", type: "LONG_TERM", status: "FREE", floor: 1, hourlyRate: 150, dailyRate: 1200 },
-  { id: "B5", spotNumber: "B5", type: "LONG_TERM", status: "RESERVED", floor: 1, hourlyRate: 150, dailyRate: 1200 },
-  { id: "B6", spotNumber: "B6", type: "LONG_TERM", status: "FREE", floor: 1, hourlyRate: 150, dailyRate: 1200 },
-]
-
 interface ParkingContextType {
-  // Auth
+  // Auth state
   isAuthenticated: boolean
-  setIsAuthenticated: (value: boolean) => void
+  isLoading: boolean
   user: User | null
-  setUser: (user: User | null) => void
+  cars: Car[]
   
   // Navigation
   currentScreen: string
   setCurrentScreen: (screen: string) => void
   
-  // Parking
-  spots: ParkingSpot[]
-  setSpots: (spots: ParkingSpot[]) => void
+  // Parking data
+  parkingSpots: ParkingSpot[]
   selectedSpot: ParkingSpot | null
   setSelectedSpot: (spot: ParkingSpot | null) => void
-  
-  // Booking
   activeBooking: ActiveBooking | null
   setActiveBooking: (booking: ActiveBooking | null) => void
+  transactions: Transaction[]
   
-  // Admin
-  isAdminMode: boolean
-  setIsAdminMode: (value: boolean) => void
-  
-  // Theme & Language
+  // Settings
   darkMode: boolean
-  setDarkMode: (dark: boolean) => void
+  setDarkMode: (mode: boolean) => void
   language: Language
   setLanguage: (lang: Language) => void
   t: typeof translations.en
+  
+  // Actions
+  onAuthSuccess: (firebaseUid: string, phone: string) => Promise<void>
+  signOut: () => Promise<void>
+  refetchUser: () => Promise<void>
+  refetchCars: () => Promise<void>
+  refetchSpots: () => Promise<void>
+  refetchTransactions: () => Promise<void>
 }
 
-const ParkingContext = createContext<ParkingContextType | undefined>(undefined)
+const ParkingContext = createContext<ParkingContextType | null>(null)
 
 export function ParkingProvider({ children }: { children: ReactNode }) {
+  // Auth state
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [user, setUser] = useState<User | null>(null)
+  const [cars, setCars] = useState<Car[]>([])
+  
+  // Navigation
   const [currentScreen, setCurrentScreen] = useState("home")
-  const [spots, setSpots] = useState<ParkingSpot[]>(initialSpots)
+  
+  // Parking data
+  const [parkingSpots, setParkingSpots] = useState<ParkingSpot[]>([])
   const [selectedSpot, setSelectedSpot] = useState<ParkingSpot | null>(null)
   const [activeBooking, setActiveBooking] = useState<ActiveBooking | null>(null)
-  const [isAdminMode, setIsAdminMode] = useState(false)
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+  
+  // Settings
   const [darkMode, setDarkMode] = useState(false)
-  const [language, setLanguage] = useState<Language>("en")
-
+  const [language, setLanguage] = useState<Language>("ru")
+  
   const t = translations[language]
-
+  
+  // Fetch user data from Supabase
+  const fetchUserData = useCallback(async (firebaseUid: string) => {
+    try {
+      const userData = await getUserByFirebaseUID(firebaseUid)
+      if (userData) {
+        setUser({
+          id: userData.id,
+          firebaseUid: userData.firebase_uid,
+          name: userData.name || "User",
+          phone: userData.phone,
+          balance: Number(userData.wallet_balance) || 0,
+          bonusPoints: userData.bonus_points || 0,
+          noShowCount: userData.no_show_count || 0,
+          isBanned: userData.is_banned || false,
+        })
+        
+        // Fetch cars
+        const userCars = await getUserCars(userData.id)
+        setCars(userCars.map(c => ({
+          id: c.id,
+          brand: c.brand,
+          model: c.model,
+          plateNumber: c.plate_number,
+        })))
+        
+        // Fetch transactions
+        const userTransactions = await getUserTransactions(userData.id)
+        setTransactions(userTransactions.map(t => ({
+          id: t.id,
+          type: t.type as Transaction["type"],
+          amount: Number(t.amount),
+          description: t.description,
+          createdAt: new Date(t.created_at),
+        })))
+        
+        // Fetch active booking
+        const userBookings = await getUserBookings(userData.id)
+        const active = userBookings.find(b => b.status === "ACTIVE")
+        if (active) {
+          const spot = parkingSpots.find(s => s.id === active.spot_id)
+          setActiveBooking({
+            id: active.id,
+            spotId: active.spot_id,
+            spotNumber: spot?.spotNumber || "",
+            type: active.type as "SHORT_TERM" | "LONG_TERM",
+            startTime: new Date(active.start_time),
+            hasArrived: !!active.arrival_time,
+            rentalDays: active.rental_days || undefined,
+            totalCost: Number(active.total_cost) || 0,
+            isPaid: active.paid || false,
+          })
+        }
+        
+        setIsAuthenticated(true)
+      }
+    } catch (error) {
+      console.error("Error fetching user data:", error)
+    }
+  }, [parkingSpots])
+  
+  // Fetch parking spots
+  const fetchParkingSpots = useCallback(async () => {
+    try {
+      const spots = await getParkingSpots()
+      setParkingSpots(spots.map(s => ({
+        id: s.id,
+        spotNumber: s.spot_number,
+        type: s.type as SpotType,
+        status: s.status as SpotStatus,
+        floor: s.floor,
+        hourlyRate: Number(s.hourly_rate),
+        dailyRate: Number(s.daily_rate),
+      })))
+    } catch (error) {
+      console.error("Error fetching parking spots:", error)
+    }
+  }, [])
+  
+  // Listen for Firebase auth state
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        await fetchParkingSpots()
+        await fetchUserData(firebaseUser.uid)
+      } else {
+        setIsAuthenticated(false)
+        setUser(null)
+        setCars([])
+        setTransactions([])
+        setActiveBooking(null)
+      }
+      setIsLoading(false)
+    })
+    
+    // Also fetch spots initially
+    fetchParkingSpots()
+    
+    return () => unsubscribe()
+  }, [fetchUserData, fetchParkingSpots])
+  
+  // Subscribe to realtime updates for parking spots
+  useEffect(() => {
+    const channel = supabase
+      .channel('parking_spots_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'parking_spots' }, () => {
+        fetchParkingSpots()
+      })
+      .subscribe()
+    
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [fetchParkingSpots])
+  
+  // Auth success handler
+  const onAuthSuccess = async (firebaseUid: string, phone: string) => {
+    setIsLoading(true)
+    try {
+      // Check if user exists
+      let userData = await getUserByFirebaseUID(firebaseUid)
+      
+      // Create user if not exists
+      if (!userData) {
+        userData = await createUser(firebaseUid, phone)
+      }
+      
+      if (userData) {
+        await fetchUserData(firebaseUid)
+      }
+    } catch (error) {
+      console.error("Error in onAuthSuccess:", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+  
+  // Sign out
+  const handleSignOut = async () => {
+    try {
+      await firebaseSignOut(auth)
+      setIsAuthenticated(false)
+      setUser(null)
+      setCars([])
+      setTransactions([])
+      setActiveBooking(null)
+      setCurrentScreen("home")
+    } catch (error) {
+      console.error("Error signing out:", error)
+    }
+  }
+  
+  // Refetch functions
+  const refetchUser = async () => {
+    if (user?.firebaseUid) {
+      await fetchUserData(user.firebaseUid)
+    }
+  }
+  
+  const refetchCars = async () => {
+    if (user?.id) {
+      const userCars = await getUserCars(user.id)
+      setCars(userCars.map(c => ({
+        id: c.id,
+        brand: c.brand,
+        model: c.model,
+        plateNumber: c.plate_number,
+      })))
+    }
+  }
+  
+  const refetchSpots = async () => {
+    await fetchParkingSpots()
+  }
+  
+  const refetchTransactions = async () => {
+    if (user?.id) {
+      const userTransactions = await getUserTransactions(user.id)
+      setTransactions(userTransactions.map(t => ({
+        id: t.id,
+        type: t.type as Transaction["type"],
+        amount: Number(t.amount),
+        description: t.description,
+        createdAt: new Date(t.created_at),
+      })))
+    }
+  }
+  
   return (
-    <ParkingContext.Provider value={{
-      isAuthenticated,
-      setIsAuthenticated,
-      user,
-      setUser,
-      currentScreen,
-      setCurrentScreen,
-      spots,
-      setSpots,
-      selectedSpot,
-      setSelectedSpot,
-      activeBooking,
-      setActiveBooking,
-      isAdminMode,
-      setIsAdminMode,
-      darkMode,
-      setDarkMode,
-      language,
-      setLanguage,
-      t,
-    }}>
+    <ParkingContext.Provider
+      value={{
+        isAuthenticated,
+        isLoading,
+        user,
+        cars,
+        currentScreen,
+        setCurrentScreen,
+        parkingSpots,
+        selectedSpot,
+        setSelectedSpot,
+        activeBooking,
+        setActiveBooking,
+        transactions,
+        darkMode,
+        setDarkMode,
+        language,
+        setLanguage,
+        t,
+        onAuthSuccess,
+        signOut: handleSignOut,
+        refetchUser,
+        refetchCars,
+        refetchSpots,
+        refetchTransactions,
+      }}
+    >
       {children}
     </ParkingContext.Provider>
   )
@@ -443,7 +688,7 @@ export function ParkingProvider({ children }: { children: ReactNode }) {
 
 export function useParking() {
   const context = useContext(ParkingContext)
-  if (context === undefined) {
+  if (!context) {
     throw new Error("useParking must be used within a ParkingProvider")
   }
   return context

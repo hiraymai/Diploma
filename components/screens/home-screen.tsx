@@ -1,12 +1,14 @@
 "use client"
 
-import { useState } from "react"
 import { useParking } from "@/lib/parking-context"
 import Image from "next/image"
 
 export function HomeScreen() {
-  const { setCurrentScreen, user, darkMode, t } = useParking()
-  const [activeTab, setActiveTab] = useState("home")
+  const { setCurrentScreen, user, cars, parkingSpots, activeBooking, darkMode, t } = useParking()
+  
+  // Calculate available spots from real data
+  const shortTermSpots = parkingSpots.filter(s => s.type === "SHORT_TERM" && s.status === "FREE").length
+  const longTermSpots = parkingSpots.filter(s => s.type === "LONG_TERM" && s.status === "FREE").length
 
   const navItems = [
     { id: "home", icon: "/Home_light.svg", activeIcon: "/Home_light_active.svg", labelKey: "home" as const, active: true },
@@ -57,7 +59,7 @@ export function HomeScreen() {
           <div className={`flex items-center justify-between ${darkMode ? 'bg-[#1e2a45]' : 'bg-[#354469]'} rounded-xl p-3`}>
             <div>
               <p className="text-gray-300 text-sm">{t.bonusPoints}</p>
-              <p className="text-white text-lg font-bold">50</p>
+              <p className="text-white text-lg font-bold">{user?.bonusPoints || 0}</p>
             </div>
             <button 
               onClick={() => setCurrentScreen("wallet")}
@@ -75,35 +77,69 @@ export function HomeScreen() {
         </div>
 
         {/* Active Booking Card */}
-        <div className={`${darkMode ? 'bg-gray-800' : 'bg-[#F0EDED]'} rounded-[20px] p-5 mb-8`} style={{boxShadow: darkMode ? '0 10px 20px rgba(0,0,0,0.3)' : '0 10px 20px rgba(0,0,0,0.08)'}}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Image 
-                src="/clock.svg" 
-                alt="Clock" 
-                width={48}
-                height={48}
-                className={`object-contain ${darkMode ? 'opacity-90' : ''}`}
-              />
-              <div>
-                <h3 className={`${darkMode ? 'text-white' : 'text-[#333333]'} font-extrabold text-lg drop-shadow-md`}>{t.activeBooking}</h3>
-                <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} text-sm`}>Spot A-24 • 2h {t.remaining}</p>
+        {activeBooking ? (
+          <div className={`${darkMode ? 'bg-gray-800' : 'bg-[#F0EDED]'} rounded-[20px] p-5 mb-8`} style={{boxShadow: darkMode ? '0 10px 20px rgba(0,0,0,0.3)' : '0 10px 20px rgba(0,0,0,0.08)'}}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Image 
+                  src="/clock.svg" 
+                  alt="Clock" 
+                  width={48}
+                  height={48}
+                  className={`object-contain ${darkMode ? 'opacity-90' : ''}`}
+                />
+                <div>
+                  <h3 className={`${darkMode ? 'text-white' : 'text-[#333333]'} font-extrabold text-lg drop-shadow-md`}>{t.activeBooking}</h3>
+                  <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} text-sm`}>
+                    Spot {activeBooking.spotNumber} • {activeBooking.type === "LONG_TERM" ? `${activeBooking.rentalDays} ${t.days}` : `${Math.ceil((Date.now() - activeBooking.startTime.getTime()) / 3600000)}h`} {t.remaining}
+                  </p>
+                </div>
               </div>
+              <button 
+                onClick={() => setCurrentScreen("booking")}
+                className={`p-2 rounded-lg ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-200'} transition-colors`}
+              >
+                <Image 
+                  src="/Arrow_right.svg" 
+                  alt="Arrow" 
+                  width={32}
+                  height={32}
+                  className={`object-contain ${darkMode ? 'brightness-0 invert' : ''}`}
+                />
+              </button>
             </div>
-            <button 
-              onClick={() => setCurrentScreen("booking")}
-              className={`p-2 rounded-lg ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-200'} transition-colors`}
-            >
-              <Image 
-                src="/Arrow_right.svg" 
-                alt="Arrow" 
-                width={32}
-                height={32}
-                className={`object-contain ${darkMode ? 'brightness-0 invert' : ''}`}
-              />
-            </button>
           </div>
-        </div>
+        ) : (
+          <div className={`${darkMode ? 'bg-gray-800' : 'bg-[#F0EDED]'} rounded-[20px] p-5 mb-8`} style={{boxShadow: darkMode ? '0 10px 20px rgba(0,0,0,0.3)' : '0 10px 20px rgba(0,0,0,0.08)'}}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Image 
+                  src="/clock.svg" 
+                  alt="Clock" 
+                  width={48}
+                  height={48}
+                  className={`object-contain ${darkMode ? 'opacity-90' : ''}`}
+                />
+                <div>
+                  <h3 className={`${darkMode ? 'text-white' : 'text-[#333333]'} font-extrabold text-lg drop-shadow-md`}>{t.noActiveBooking}</h3>
+                  <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} text-sm`}>{t.browseSpots}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setCurrentScreen("map")}
+                className={`p-2 rounded-lg ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-200'} transition-colors`}
+              >
+                <Image 
+                  src="/Arrow_right.svg" 
+                  alt="Arrow" 
+                  width={32}
+                  height={32}
+                  className={`object-contain ${darkMode ? 'brightness-0 invert' : ''}`}
+                />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Parking Spots */}
         <div className="mb-8">
