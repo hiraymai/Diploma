@@ -3,13 +3,16 @@
 import { useState } from "react"
 import { useParking } from "@/lib/parking-context"
 import { Input } from "@/components/ui/input"
-import { AlertTriangle, Plus, Trash2, LogOut, Settings, Bell, User } from "lucide-react"
+import { AlertTriangle, Plus, Trash2, LogOut, Settings, Bell, User, ChevronRight, Moon, Globe, Shield, HelpCircle, ChevronLeft } from "lucide-react"
 import Image from "next/image"
 
 export function ProfileScreen() {
   const { user, setUser, setIsAuthenticated, setCurrentScreen } = useParking()
   const [isAddingCar, setIsAddingCar] = useState(false)
   const [newCar, setNewCar] = useState({ brand: "", model: "", plateNumber: "" })
+  const [showSettings, setShowSettings] = useState(false)
+  const [darkMode, setDarkMode] = useState(false)
+  const [notifications, setNotifications] = useState(true)
   
   const handleAddCar = () => {
     if (!user || !newCar.brand || !newCar.model || !newCar.plateNumber) return
@@ -44,6 +47,152 @@ export function ProfileScreen() {
     setCurrentScreen("home")
   }
   
+  // Settings Page
+  if (showSettings) {
+    return (
+      <div className="flex flex-col h-full bg-gray-50">
+        {/* Settings Header */}
+        <div className="bg-[#495E8E] rounded-b-[2.5rem] px-5 pt-6 pb-8 shadow-lg">
+          <div className="flex items-center gap-3 mb-2">
+            <button 
+              onClick={() => setShowSettings(false)}
+              className="p-2 rounded-full hover:bg-white/10 transition-colors"
+            >
+              <ChevronLeft className="w-5 h-5 text-white" />
+            </button>
+            <h1 className="text-xl font-bold text-white">Settings</h1>
+          </div>
+        </div>
+
+        {/* Settings Content */}
+        <div className="flex-1 px-4 py-6 overflow-y-auto pb-32">
+          {/* Appearance */}
+          <div className="bg-white rounded-3xl p-4 mb-4 shadow-lg">
+            <h3 className="text-sm font-semibold text-gray-400 uppercase mb-3">Appearance</h3>
+            
+            <div className="flex items-center justify-between py-3">
+              <div className="flex items-center gap-3">
+                <Moon className="w-5 h-5 text-[#34415F]" />
+                <span className="font-medium text-gray-900">Dark Mode</span>
+              </div>
+              <button 
+                onClick={() => setDarkMode(!darkMode)}
+                className={`w-12 h-7 rounded-full transition-colors ${darkMode ? 'bg-[#495E8E]' : 'bg-gray-300'}`}
+              >
+                <div className={`w-5 h-5 bg-white rounded-full shadow-md transition-transform mx-1 ${darkMode ? 'translate-x-5' : 'translate-x-0'}`} />
+              </button>
+            </div>
+            
+            <div className="flex items-center justify-between py-3 border-t border-gray-100">
+              <div className="flex items-center gap-3">
+                <Globe className="w-5 h-5 text-[#34415F]" />
+                <span className="font-medium text-gray-900">Language</span>
+              </div>
+              <div className="flex items-center gap-1 text-gray-500">
+                <span className="text-sm">English</span>
+                <ChevronRight className="w-4 h-4" />
+              </div>
+            </div>
+          </div>
+
+          {/* Notifications */}
+          <div className="bg-white rounded-3xl p-4 mb-4 shadow-lg">
+            <h3 className="text-sm font-semibold text-gray-400 uppercase mb-3">Notifications</h3>
+            
+            <div className="flex items-center justify-between py-3">
+              <div className="flex items-center gap-3">
+                <Bell className="w-5 h-5 text-[#34415F]" />
+                <span className="font-medium text-gray-900">Push Notifications</span>
+              </div>
+              <button 
+                onClick={() => setNotifications(!notifications)}
+                className={`w-12 h-7 rounded-full transition-colors ${notifications ? 'bg-[#495E8E]' : 'bg-gray-300'}`}
+              >
+                <div className={`w-5 h-5 bg-white rounded-full shadow-md transition-transform mx-1 ${notifications ? 'translate-x-5' : 'translate-x-0'}`} />
+              </button>
+            </div>
+          </div>
+
+          {/* Security & Privacy */}
+          <div className="bg-white rounded-3xl p-4 mb-4 shadow-lg">
+            <h3 className="text-sm font-semibold text-gray-400 uppercase mb-3">Security & Privacy</h3>
+            
+            <div className="flex items-center justify-between py-3">
+              <div className="flex items-center gap-3">
+                <Shield className="w-5 h-5 text-[#34415F]" />
+                <span className="font-medium text-gray-900">Privacy Policy</span>
+              </div>
+              <ChevronRight className="w-5 h-5 text-gray-400" />
+            </div>
+            
+            <div className="flex items-center justify-between py-3 border-t border-gray-100">
+              <div className="flex items-center gap-3">
+                <HelpCircle className="w-5 h-5 text-[#34415F]" />
+                <span className="font-medium text-gray-900">Terms of Service</span>
+              </div>
+              <ChevronRight className="w-5 h-5 text-gray-400" />
+            </div>
+          </div>
+
+          {/* App Info */}
+          <div className="bg-white rounded-3xl p-4 mb-4 shadow-lg">
+            <h3 className="text-sm font-semibold text-gray-400 uppercase mb-3">About</h3>
+            
+            <div className="flex items-center justify-between py-3">
+              <span className="font-medium text-gray-900">App Version</span>
+              <span className="text-sm text-gray-500">1.0.0</span>
+            </div>
+            
+            <div className="flex items-center justify-between py-3 border-t border-gray-100">
+              <span className="font-medium text-gray-900">Build</span>
+              <span className="text-sm text-gray-500">2025.01.15</span>
+            </div>
+          </div>
+
+          {/* Delete Account */}
+          <button className="w-full py-4 text-red-500 font-medium text-center">
+            Delete Account
+          </button>
+        </div>
+
+        {/* Bottom Navigation */}
+        <div className="absolute bottom-0 left-0 right-0 h-20 bg-white border-t border-gray-200 z-50">
+          <div className="flex justify-around items-center h-full px-4">
+            {[
+              { id: "home", icon: "/Home_light.svg", activeIcon: "/Home_light_active.svg", label: "Home", active: false },
+              { id: "map", icon: "/Map_light.svg", activeIcon: "/Map_light_active.svg", label: "Map", active: false },
+              { id: "booking", icon: "/Component.svg", activeIcon: "/Component_active.svg", label: "Booking", active: false },
+              { id: "wallet", icon: "/wallet.svg", activeIcon: "/wallet_active.svg", label: "Wallet", active: false },
+              { id: "profile", icon: "/User_cicrle_light.svg", activeIcon: "/User_cicrle_light_active.svg", label: "Profile", active: true },
+            ].map((item) => (
+              <button
+                key={item.id}
+                onClick={() => {
+                  setShowSettings(false)
+                  setCurrentScreen(item.id)
+                }}
+                className="flex flex-col items-center justify-center gap-0.5 p-3 transition-all hover:bg-gray-100 rounded-xl active:scale-95"
+              >
+                <div className="w-8 h-8 flex items-center justify-center">
+                  <img 
+                    src={item.active ? item.activeIcon : item.icon} 
+                    alt={item.label} 
+                    width={28}
+                    height={28}
+                    className={item.active ? "opacity-100" : "opacity-80"}
+                  />
+                </div>
+                <span className={`text-xs font-medium ${item.active ? "text-[#36549B]" : "text-gray-900"}`}>
+                  {item.label}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col h-full bg-gray-50">
       {/* Top Profile Card */}
@@ -52,7 +201,10 @@ export function ProfileScreen() {
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-xl font-bold text-white">Profile</h1>
           <div className="flex items-center gap-3">
-            <button className="p-2 rounded-full hover:bg-white/10 transition-colors">
+            <button 
+              onClick={() => setShowSettings(true)}
+              className="p-2 rounded-full hover:bg-white/10 transition-colors"
+            >
               <Settings className="w-5 h-5 text-white" />
             </button>
             <button className="p-2 rounded-full hover:bg-white/10 transition-colors relative">
@@ -101,9 +253,7 @@ export function ProfileScreen() {
         <div className="bg-white rounded-3xl p-4 mb-4 shadow-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5 text-amber-600" />
-              </div>
+              <AlertTriangle className="w-6 h-6 text-[#34415F]" />
               <div>
                 <p className="font-semibold text-gray-900">No show counter</p>
                 <p className="text-sm text-gray-500">{user?.noShowCount || 1} of 6 (ban at 6)</p>
@@ -119,15 +269,13 @@ export function ProfileScreen() {
         <div className="bg-white rounded-3xl p-4 mb-4 shadow-lg">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                <Image 
-                  src="/car.svg" 
-                  alt="Car" 
-                  width={20}
-                  height={20}
-                  className="object-contain"
-                />
-              </div>
+              <Image 
+                src="/car.svg" 
+                alt="Car" 
+                width={24}
+                height={24}
+                className="object-contain"
+              />
               <p className="font-semibold text-gray-900">My cars</p>
             </div>
             <button 
