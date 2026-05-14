@@ -15,6 +15,11 @@ export function ProfileScreen() {
   const [notifications, setNotifications] = useState(true)
   const [isEditingName, setIsEditingName] = useState(false)
   const [editedName, setEditedName] = useState(user?.name || "")
+  const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false)
+  const [showTermsOfService, setShowTermsOfService] = useState(false)
+  const [showLanguageSelect, setShowLanguageSelect] = useState(false)
+  const [selectedLanguage, setSelectedLanguage] = useState("English")
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   
   const handleAddCar = () => {
     if (!user || !newCar.brand || !newCar.model || !newCar.plateNumber) return
@@ -99,16 +104,19 @@ export function ProfileScreen() {
               </button>
             </div>
             
-            <div className="flex items-center justify-between py-3 border-t border-gray-100">
+            <button 
+              onClick={() => setShowLanguageSelect(true)}
+              className="flex items-center justify-between py-3 border-t border-gray-100 w-full"
+            >
               <div className="flex items-center gap-3">
                 <Globe className="w-5 h-5 text-[#34415F]" />
                 <span className="font-medium text-gray-900">Language</span>
               </div>
               <div className="flex items-center gap-1 text-gray-500">
-                <span className="text-sm">English</span>
+                <span className="text-sm">{selectedLanguage}</span>
                 <ChevronRight className="w-4 h-4" />
               </div>
-            </div>
+            </button>
           </div>
 
           {/* Notifications */}
@@ -133,21 +141,27 @@ export function ProfileScreen() {
           <div className="bg-white rounded-3xl p-4 mb-4 shadow-lg">
             <h3 className="text-sm font-semibold text-gray-400 uppercase mb-3">Security & Privacy</h3>
             
-            <div className="flex items-center justify-between py-3">
+            <button 
+              onClick={() => setShowPrivacyPolicy(true)}
+              className="flex items-center justify-between py-3 w-full"
+            >
               <div className="flex items-center gap-3">
                 <Shield className="w-5 h-5 text-[#34415F]" />
                 <span className="font-medium text-gray-900">Privacy Policy</span>
               </div>
               <ChevronRight className="w-5 h-5 text-gray-400" />
-            </div>
+            </button>
             
-            <div className="flex items-center justify-between py-3 border-t border-gray-100">
+            <button 
+              onClick={() => setShowTermsOfService(true)}
+              className="flex items-center justify-between py-3 border-t border-gray-100 w-full"
+            >
               <div className="flex items-center gap-3">
                 <HelpCircle className="w-5 h-5 text-[#34415F]" />
                 <span className="font-medium text-gray-900">Terms of Service</span>
               </div>
               <ChevronRight className="w-5 h-5 text-gray-400" />
-            </div>
+            </button>
           </div>
 
           {/* App Info */}
@@ -161,18 +175,178 @@ export function ProfileScreen() {
             
             <div className="flex items-center justify-between py-3 border-t border-gray-100">
               <span className="font-medium text-gray-900">Build</span>
-              <span className="text-sm text-gray-500">2025.01.15</span>
+              <span className="text-sm text-gray-500">2026.05.14</span>
             </div>
           </div>
 
           {/* Delete Account */}
-          <button className="w-full py-4 text-red-500 font-medium text-center">
+          <button 
+            onClick={() => setShowDeleteConfirm(true)}
+            className="w-full py-4 text-red-500 font-medium text-center hover:text-red-600 transition-colors"
+          >
             Delete Account
           </button>
         </div>
 
+        {/* Language Select Modal */}
+        {showLanguageSelect && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className="mx-4 w-full max-w-[320px] overflow-hidden rounded-2xl bg-white shadow-xl">
+              <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+                <h3 className="text-lg font-bold text-gray-900">Select Language</h3>
+                <button 
+                  onClick={() => setShowLanguageSelect(false)}
+                  className="p-1 rounded-full hover:bg-gray-100"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+              <div className="p-2">
+                {["English", "Kazakh", "Russian"].map((lang) => (
+                  <button
+                    key={lang}
+                    onClick={() => {
+                      setSelectedLanguage(lang)
+                      setShowLanguageSelect(false)
+                    }}
+                    className={`w-full text-left px-4 py-3 rounded-xl transition-colors ${
+                      selectedLanguage === lang 
+                        ? "bg-[#495E8E] text-white" 
+                        : "hover:bg-gray-100 text-gray-900"
+                    }`}
+                  >
+                    {lang}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Privacy Policy Modal */}
+        {showPrivacyPolicy && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className="mx-4 max-h-[85%] w-full max-w-[350px] overflow-hidden rounded-2xl bg-white shadow-xl">
+              <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+                <h3 className="text-lg font-bold text-gray-900">Privacy Policy</h3>
+                <button 
+                  onClick={() => setShowPrivacyPolicy(false)}
+                  className="p-1 rounded-full hover:bg-gray-100"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+              <div className="max-h-[400px] overflow-y-auto px-5 py-4 text-sm text-gray-700">
+                <p className="mb-4 font-semibold text-gray-900">Last updated: May 2026</p>
+                
+                <h4 className="mb-2 font-semibold text-gray-900">1. Information We Collect</h4>
+                <p className="mb-4">We collect information you provide directly, including your phone number, name, vehicle information, and payment details when you use our parking services.</p>
+                
+                <h4 className="mb-2 font-semibold text-gray-900">2. How We Use Your Information</h4>
+                <p className="mb-4">Your information is used to provide parking services, process payments, send notifications about your parking sessions, and improve our application.</p>
+                
+                <h4 className="mb-2 font-semibold text-gray-900">3. Data Storage</h4>
+                <p className="mb-4">Your data is securely stored on encrypted servers. We retain your information only as long as necessary to provide our services.</p>
+                
+                <h4 className="mb-2 font-semibold text-gray-900">4. Data Sharing</h4>
+                <p className="mb-4">We do not sell your personal information. We may share data with parking operators and payment processors only as necessary to provide services.</p>
+                
+                <h4 className="mb-2 font-semibold text-gray-900">5. Your Rights</h4>
+                <p className="mb-4">You have the right to access, correct, or delete your personal data. Contact us at privacy@qpark.kz to exercise these rights.</p>
+              </div>
+              <div className="border-t border-gray-100 px-5 py-4">
+                <button 
+                  onClick={() => setShowPrivacyPolicy(false)}
+                  className="w-full rounded-xl bg-[#495E8E] py-3 font-semibold text-white hover:bg-[#3d4c73] transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Terms of Service Modal */}
+        {showTermsOfService && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className="mx-4 max-h-[85%] w-full max-w-[350px] overflow-hidden rounded-2xl bg-white shadow-xl">
+              <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+                <h3 className="text-lg font-bold text-gray-900">Terms of Service</h3>
+                <button 
+                  onClick={() => setShowTermsOfService(false)}
+                  className="p-1 rounded-full hover:bg-gray-100"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+              <div className="max-h-[400px] overflow-y-auto px-5 py-4 text-sm text-gray-700">
+                <p className="mb-4 font-semibold text-gray-900">Last updated: May 2026</p>
+                
+                <h4 className="mb-2 font-semibold text-gray-900">1. Acceptance of Terms</h4>
+                <p className="mb-4">By using QPark, you agree to these Terms of Service. If you do not agree, please do not use our application.</p>
+                
+                <h4 className="mb-2 font-semibold text-gray-900">2. Service Description</h4>
+                <p className="mb-4">QPark provides smart parking solutions including finding, reserving, and paying for parking spaces through our mobile application.</p>
+                
+                <h4 className="mb-2 font-semibold text-gray-900">3. User Responsibilities</h4>
+                <p className="mb-4">Users must provide accurate information, follow parking regulations, and ensure timely payment for services used.</p>
+                
+                <h4 className="mb-2 font-semibold text-gray-900">4. No-Show Policy</h4>
+                <p className="mb-4">Failure to use a reserved parking spot may result in penalties. After 6 no-shows, your account may be suspended.</p>
+                
+                <h4 className="mb-2 font-semibold text-gray-900">5. Limitation of Liability</h4>
+                <p className="mb-4">QPark is not responsible for vehicle damage, theft, or any incidents occurring in parking facilities.</p>
+                
+                <h4 className="mb-2 font-semibold text-gray-900">6. Contact</h4>
+                <p className="mb-4">For questions, contact us at support@qpark.kz or +7 708 239 51 19</p>
+              </div>
+              <div className="border-t border-gray-100 px-5 py-4">
+                <button 
+                  onClick={() => setShowTermsOfService(false)}
+                  className="w-full rounded-xl bg-[#495E8E] py-3 font-semibold text-white hover:bg-[#3d4c73] transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Account Confirmation Modal */}
+        {showDeleteConfirm && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className="mx-4 w-full max-w-[320px] overflow-hidden rounded-2xl bg-white shadow-xl">
+              <div className="px-5 py-6 text-center">
+                <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
+                  <AlertTriangle className="w-7 h-7 text-red-500" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 mb-2">Delete Account?</h3>
+                <p className="text-sm text-gray-500 mb-6">This action cannot be undone. All your data, including cars and booking history, will be permanently deleted.</p>
+                <div className="flex gap-3">
+                  <button 
+                    onClick={() => setShowDeleteConfirm(false)}
+                    className="flex-1 py-3 rounded-xl border border-gray-200 font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setShowDeleteConfirm(false)
+                      setShowSettings(false)
+                      handleSignOut()
+                    }}
+                    className="flex-1 py-3 rounded-xl bg-red-500 text-white font-medium hover:bg-red-600 transition-colors"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Bottom Navigation */}
-        <div className="absolute bottom-0 left-0 right-0 h-20 bg-white border-t border-gray-200 z-50">
+        <div className="absolute bottom-0 left-0 right-0 h-20 bg-white border-t border-gray-200 z-40">
           <div className="flex justify-around items-center h-full px-4">
             {[
               { id: "home", icon: "/Home_light.svg", activeIcon: "/Home_light_active.svg", label: "Home", active: false },
